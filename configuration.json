@@ -1,0 +1,94 @@
+{
+  "maps" : [
+    {
+      "id" : "folderContent",
+      "path" : [
+        {
+          "target" : "contentActor",
+          "handler" : "getContentByPath"
+        },
+        {
+          "target" : "exchanging"
+        }
+      ]
+    },
+    {
+      "id" : "initUpload",
+      "path" : [
+        {
+          "target" : "fileSystemManagerActor",
+          "handler" : "getCurrentFolder"
+        },
+        {
+          "target" : "uploadActor",
+          "handler" : "prepareForLocalStorage"
+        },
+        {
+          "target" : "fileManagerActor",
+          "handler" : "copyFile"
+        }
+      ]
+    },
+    {
+      "id" : "getFolderWithCreate",
+      "path" : [
+        {
+          "target" : "fileSystemManagerActor",
+          "handler" : "createSubfolder"
+        },
+        {
+          "target" : "fileSystemManagerActor",
+          "handler" : "getCurrentFolder"
+        }
+      ]
+    },
+    {
+      "id" : "loggerId",
+      "path" : [
+        {
+          "target" : "loggerActor",
+          "handler" : "logConsole"
+        }
+      ]
+    }
+  ],
+  "actors": [
+    {
+      "id": "folder.content.ContentActor",
+      "name": "contentActor",
+      "parameters": {
+      }
+    },
+    {
+      "id": "folder.file.system.FileSystemManagerActor",
+      "name": "fileSystemManagerActor",
+      "parameters": {
+        "sysFolderPath" : "D:\\Programming\\Magistrature\\Executable\\AppSysDirectory",
+        "maxFileCounter" : "10",
+        "getFolderWithCreateMmId" : "getFolderWithCreate"
+      }
+    },
+    {
+      "id": "folder.file.FileManagerActor",
+      "name": "fileManagerActor",
+      "parameters": {
+      }
+    },
+    {
+      "id": "folder.upload.UploadActor",
+      "name": "uploadActor",
+      "parameters": {
+      }
+    },
+    {
+      "id": "folder.console.ActionLogger",
+      "name": "loggerActor",
+      "parameters": {
+      }
+    }
+  ],
+  "validationRules" : [
+  ],
+  "transformationRules": [
+  ]
+}
