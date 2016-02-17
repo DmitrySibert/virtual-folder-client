@@ -21,11 +21,23 @@
         },
         {
           "target" : "uploadActor",
-          "handler" : "prepareForLocalStorage"
+          "handler" : "prepareFileMetadata"
+        },
+        {
+          "target" : "uploadActor",
+          "handler" : "prepareInfoForCopy"
+        },
+        {
+          "target" : "uploadActor",
+          "handler" : "prepareFileInfoForStorage"
         },
         {
           "target" : "fileManagerActor",
           "handler" : "copyFile"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "insert"
         }
       ]
     },
@@ -78,12 +90,21 @@
       "id": "folder.upload.UploadActor",
       "name": "uploadActor",
       "parameters": {
+        "fileInfoCollectionName" : "file_info"
       }
     },
     {
       "id": "folder.console.ActionLogger",
       "name": "loggerActor",
       "parameters": {
+      }
+    },
+    {
+      "id": "folder.database.embedded.MapDbActor",
+      "name": "mapDbActor",
+      "parameters": {
+        "dbFilePath" : "D:\\Programming\\Magistrature\\Executable\\mapdb_file",
+        "password" : "123456"
       }
     }
   ],
