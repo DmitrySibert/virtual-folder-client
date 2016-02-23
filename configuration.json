@@ -13,7 +13,7 @@
       ]
     },
     {
-      "id" : "initUpload",
+      "id" : "fileUpload",
       "path" : [
         {
           "target" : "fileSystemManagerActor",
@@ -29,7 +29,15 @@
         },
         {
           "target" : "uploadActor",
-          "handler" : "prepareFileInfoForStorage"
+          "handler" : "prepareFileInfo"
+        },
+        {
+          "target" : "uploadActor",
+          "handler" : "markDataForStorage"
+        },
+        {
+          "target" : "uploadActor",
+          "handler" : "formInfoForServer"
         },
         {
           "target" : "fileManagerActor",
@@ -38,7 +46,27 @@
         {
           "target" : "mapDbActor",
           "handler" : "insert"
-        }
+        },
+        {
+          "target" : "externalJsonRequestActor",
+          "handler" : "post"
+        },
+        {
+          "target" : "uploadActor",
+          "handler" : "handleUploadInfoFromServer"
+        },
+        {
+          "target" : "uploadActor",
+          "handler" : "prepareUploadInfoForStorage"
+        },
+        {
+          "target" : "uploadActor",
+          "handler" : "markDataForStorage"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "insert"
+        },
       ]
     },
     {
@@ -105,6 +133,14 @@
       "parameters": {
         "dbFilePath" : "D:\\Programming\\Magistrature\\Executable\\mapdb_file",
         "password" : "123456"
+      }
+    },
+    {
+      "id": "folder.http.ExternalJsonRequestActor",
+      "name": "externalJsonRequestActor",
+      "parameters": {
+        "serverAddr" : "http://localhost:9098",
+        "clientUri" : "http://localhost:9097"
       }
     }
   ],

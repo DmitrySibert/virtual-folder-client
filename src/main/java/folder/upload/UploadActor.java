@@ -30,6 +30,9 @@ public class UploadActor extends Actor {
     private Field<String> destF;
     /** Данные для post-запроса*/
     private Field<IObject> postRequestDataF;
+    private Field<IObject> postResponseDataF;
+    private Field<String> remoteMsgMapF;
+
     /** Поле для имени коллекции для сохранения */
     private Field<String> collectionNameF;
     /** Поле с данными для сохранение*/
@@ -39,6 +42,8 @@ public class UploadActor extends Actor {
     private Field<Integer> sentPartsF;
     private Field<Integer> partsQuantityF;
     private Field<Boolean> isSentF;
+    private Field<Integer> partSizeF;
+    private Field<String> serverGuidF;
 
     private String fileInfoCollectionName;
 
@@ -56,12 +61,16 @@ public class UploadActor extends Actor {
         srcF = new Field<>(new FieldName("src"));
         destF = new Field<>(new FieldName("dest"));
         postRequestDataF = new Field<>(new FieldName("postRequestData"));
+        postResponseDataF = new Field<>(new FieldName("postResponseData"));
         folderDestPathF = new Field<>(new FieldName("folderDestPath"));
         fileOriginNameF = new Field<>(new FieldName("fileOriginName"));
         fileIdF = new Field<>(new FieldName("fileId"));
+        remoteMsgMapF = new Field<>(new FieldName("remoteMsgMap"));
         sentPartsF = new Field<>(new FieldName("sentParts"));
         partsQuantityF = new Field<>(new FieldName("partsQuantity"));
         isSentF = new Field<>(new FieldName("isSent"));
+        partSizeF = new Field<>(new FieldName("partSize"));
+        serverGuidF = new Field<>(new FieldName("serverGuid"));
     }
 
     /**
@@ -105,18 +114,32 @@ public class UploadActor extends Actor {
      * @throws ReadValueException
      * @throws ChangeValueException
      */
-    @Handler("prepareFileInfoForStorage")
-    public void prepareFileInfoForStorage(IMessage msg) throws ReadValueException, ChangeValueException {
+    @Handler("prepareFileInfo")
+    public void prepareFileInfo(IMessage msg) throws ReadValueException, ChangeValueException {
 
-        IObject insertObj = new SMObject();
         IObject fileInfo = new SMObject();
         sentPartsF.inject(fileInfo, 0);
         isSentF.inject(fileInfo, Boolean.FALSE);
         fileSizeF.inject(fileInfo, fileSizeF.from(msg, Long.class));
         filePathF.inject(fileInfo, filePathAbsF.from(msg, String.class));
-        insertObj.setValue(new FieldName(filePathF.from(msg, String.class)), fileInfo);
+        msg.setValue(new FieldName(filePathF.from(msg, String.class)), fileInfo);
+    }
 
+    /**
+     * Поместить информацию о файле в объект для последующего соханения в БД
+     * @param msg содержит по ключу-идентификатору файла информацию о файле для сохранения в БД
+     * @throws ReadValueException
+     * @throws ChangeValueException
+     */
+    @Handler("markDataForStorage")
+    public void markDataForStorage(IMessage msg) throws ReadValueException, ChangeValueException {
+
+        IObject insertObj = new SMObject();
+        FieldName filePathFN = new FieldName(filePathF.from(msg, String.class));
+        IObject fileInfo = (IObject) msg.getValue(filePathFN);
+        insertObj.setValue(filePathFN, fileInfo);
         collectionNameF.inject(msg, fileInfoCollectionName);
+
         insertDataF.inject(msg, insertObj);
     }
 
@@ -131,11 +154,44 @@ public class UploadActor extends Actor {
     @Handler("formInfoForServer")
     public void formInfoForServer(IMessage msg) throws ReadValueException, ChangeValueException {
 
-        //IOC.resolve(IObject.class);??
+        //TODO: IOC.resolve(IObject.class);
         IObject info = new SMObject();
         fileSizeF.inject(info, fileSizeF.from(msg, Long.class));
         fileOriginNameF.inject(info, fileOriginNameF.from(msg, String.class));
         fileIdF.inject(info, filePathF.from(msg, String.class));
         postRequestDataF.inject(msg, info);
+        remoteMsgMapF.inject(msg, "beginUploadMessageMap");
+    }
+
+    /**
+     * Извлечь данные для загрузки файла на сервер, присланные сервером
+     * @param msg содержит postResponseData - идентификатор файла, guid выданный сервером, количество кусков, размер куска
+     * @throws ReadValueException
+     * @throws ChangeValueException
+     */
+    @Handler("handleUploadInfoFromServer")
+    public void handleUploadInfoFromServer(IMessage msg) throws ReadValueException, ChangeValueException {
+
+        IObject data = postResponseDataF.from(msg, IObject.class);
+        fileIdF.inject(msg, fileIdF.from(data, String.class));
+        serverGuidF.inject(msg, serverGuidF.from(data, String.class));
+        partSizeF.inject(msg, partSizeF.from(data, Integer.class));
+        partsQuantityF.inject(msg, partsQuantityF.from(data, Integer.class));
+    }
+
+    /**
+     * Добавить в информацию о файле данные для загрузки на сервер, присланные сервером
+     * @param msg
+     * @throws ReadValueException
+     * @throws ChangeValueException
+     */
+    @Handler("prepareUploadInfoForStorage")
+    public void prepareUploadInfoForStorage(IMessage msg) throws ReadValueException, ChangeValueException {
+
+        FieldName filePathFN = new FieldName(filePathF.from(msg, String.class));
+        IObject fileInfo = (IObject) msg.getValue(filePathFN);
+        serverGuidF.inject(fileInfo, serverGuidF.from(msg, String.class));
+        partSizeF.inject(fileInfo, partSizeF.from(msg, Integer.class));
+        partsQuantityF.inject(fileInfo, partsQuantityF.from(msg, Integer.class));
     }
 }
