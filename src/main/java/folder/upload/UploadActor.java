@@ -25,7 +25,10 @@ public class UploadActor extends Actor {
     private Field<String> fileOriginNameF;
     /** Имя, присвоенное файлу, для хранения в системной директории приложения */
     private Field<String> fileIdF;
-    private Field<Long> fileSizeF;
+    //TODO: Если вдруг, что мало вероятно, почти нереально, что файлы будут больше чем (2 гбайт - 1 байт)
+    //TODO: то придется переходить на размер Long и переписывать некоторые куски приложения
+    //TODO: не думаю, что кто-то будет использовать это приложение для таких больших файлов
+    private Field<Integer> fileSizeF;
     private Field<String> srcF;
     private Field<String> destF;
     /** Данные для post-запроса*/
@@ -41,8 +44,8 @@ public class UploadActor extends Actor {
     /** Информация по файлу */
     private Field<Integer> sentPartsF;
     private Field<Integer> partsQuantityF;
-    private Field<Boolean> isSentF;
     private Field<Integer> partSizeF;
+    private Field<Boolean> isSentF;
     private Field<String> serverGuidF;
 
     private String fileInfoCollectionName;
@@ -52,7 +55,9 @@ public class UploadActor extends Actor {
         try {
             fileInfoCollectionName = new Field<String>(new FieldName("fileInfoCollectionName")).from(params, String.class);
         } catch (ReadValueException | ChangeValueException e) {
-            System.out.println("An error occurred while constructing UploadActor: " + e);
+            String errMsg = "An error occurred while constructing UploadActor: " + e;
+            System.out.println(errMsg);
+            throw new RuntimeException(errMsg);
         }
         filePathF = new Field<>(new FieldName("filePath"));
         storageFolderF = new Field<>(new FieldName("storageFolder"));
@@ -68,8 +73,8 @@ public class UploadActor extends Actor {
         remoteMsgMapF = new Field<>(new FieldName("remoteMsgMap"));
         sentPartsF = new Field<>(new FieldName("sentParts"));
         partsQuantityF = new Field<>(new FieldName("partsQuantity"));
-        isSentF = new Field<>(new FieldName("isSent"));
         partSizeF = new Field<>(new FieldName("partSize"));
+        isSentF = new Field<>(new FieldName("isSent"));
         serverGuidF = new Field<>(new FieldName("serverGuid"));
     }
 
@@ -105,7 +110,7 @@ public class UploadActor extends Actor {
         String filePathAbs = storageFolderF.from(msg, String.class) + UUID.randomUUID().toString();
         filePathAbsF.inject(msg, filePathAbs);
         File file = new File(filePathAbs);
-        fileSizeF.inject(msg, file.length());
+        fileSizeF.inject(msg, Long.valueOf(file.length()).intValue());
     }
 
     /**
@@ -120,7 +125,7 @@ public class UploadActor extends Actor {
         IObject fileInfo = new SMObject();
         sentPartsF.inject(fileInfo, 0);
         isSentF.inject(fileInfo, Boolean.FALSE);
-        fileSizeF.inject(fileInfo, fileSizeF.from(msg, Long.class));
+        fileSizeF.inject(fileInfo, fileSizeF.from(msg, Integer.class));
         filePathF.inject(fileInfo, filePathAbsF.from(msg, String.class));
         msg.setValue(new FieldName(filePathF.from(msg, String.class)), fileInfo);
     }
@@ -131,10 +136,11 @@ public class UploadActor extends Actor {
      * @throws ReadValueException
      * @throws ChangeValueException
      */
-    @Handler("markDataForStorage")
-    public void markDataForStorage(IMessage msg) throws ReadValueException, ChangeValueException {
+    @Handler("markFileInfoForStorage")
+    public void markFileInfoForStorage(IMessage msg) throws ReadValueException, ChangeValueException {
 
         IObject insertObj = new SMObject();
+        //TODO:Сделать служебным мутабельным именем
         FieldName filePathFN = new FieldName(filePathF.from(msg, String.class));
         IObject fileInfo = (IObject) msg.getValue(filePathFN);
         insertObj.setValue(filePathFN, fileInfo);
@@ -156,7 +162,7 @@ public class UploadActor extends Actor {
 
         //TODO: IOC.resolve(IObject.class);
         IObject info = new SMObject();
-        fileSizeF.inject(info, fileSizeF.from(msg, Long.class));
+        fileSizeF.inject(info, fileSizeF.from(msg, Integer.class));
         fileOriginNameF.inject(info, fileOriginNameF.from(msg, String.class));
         fileIdF.inject(info, filePathF.from(msg, String.class));
         postRequestDataF.inject(msg, info);
@@ -193,5 +199,13 @@ public class UploadActor extends Actor {
         serverGuidF.inject(fileInfo, serverGuidF.from(msg, String.class));
         partSizeF.inject(fileInfo, partSizeF.from(msg, Integer.class));
         partsQuantityF.inject(fileInfo, partsQuantityF.from(msg, Integer.class));
+    }
+
+    @Handler("finishUpload")
+    public void finishUpload(IMessage msg) throws ReadValueException, ChangeValueException {
+        //TODO:Сделать служебным мутабельным именем
+        FieldName filePathFN = new FieldName(filePathF.from(msg, String.class));
+        IObject fileInfo = (IObject) msg.getValue(filePathFN);
+        isSentF.inject(fileInfo, Boolean.TRUE);
     }
 }

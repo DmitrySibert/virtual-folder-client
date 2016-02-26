@@ -33,7 +33,7 @@
         },
         {
           "target" : "uploadActor",
-          "handler" : "markDataForStorage"
+          "handler" : "markFileInfoForStorage"
         },
         {
           "target" : "uploadActor",
@@ -67,6 +67,59 @@
           "target" : "mapDbActor",
           "handler" : "insert"
         },
+        {
+          "target" : "partsMakerActor",
+          "handler" : "makePart"
+        }
+      ]
+    },
+    {
+      "id" : "updateFileUploadInfo",
+      "path" : [
+        {
+          "target" : "uploadActor",
+          "handler" : "markFileInfoForStorage"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "insert"
+        }
+      ]
+    },
+    {
+      "id" : "uploadFilePart",
+      "path" : [
+        {
+          "target" : "partsMakerActor",
+          "handler" : "makePart"
+        },
+        {
+          "target" : "base64Actor",
+          "handler" : "encode"
+        },
+        {
+          "target" : "partsMakerActor",
+          "handler" : "formFilePartRequest"
+        },
+        {
+          "target" : "partsMakerActor",
+          "handler" : "handleFilePartSend"
+        },
+        {
+          "messageMapId" : "updateFileUploadInfo"
+        }
+      ]
+    },
+    {
+      "id" : "finishUpload",
+      "path" : [
+        {
+          "target" : "uploadActor",
+          "handler" : "finishUpload"
+        },
+        {
+          "messageMapId" : "updateFileUploadInfo"
+        }
       ]
     },
     {
@@ -122,8 +175,22 @@
       }
     },
     {
+      "id": "folder.upload.PartsMakerActor",
+      "name": "partsMakerActor",
+      "parameters": {
+        "finishUploadMmId" : "finishUpload",
+        "uploadFilePartMmId" : "uploadFilePart"
+      }
+    },
+    {
       "id": "folder.console.ActionLogger",
       "name": "loggerActor",
+      "parameters": {
+      }
+    },
+    {
+      "id": "folder.encode.Base64Actor",
+      "name": "base64Actor",
       "parameters": {
       }
     },
