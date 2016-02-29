@@ -135,9 +135,10 @@ public class PartsMakerActor extends Actor {
             fieldName.setName(filePathF.from(msg, String.class));
             IObject fileInfo = (IObject) msg.getValue(fieldName);
             sentPartsF.inject(fileInfo, sentPartsF.from(fileInfo, Integer.class) + 1);
+        } else {
+            //переключаем карту сообщений на начало
+            MessageMap curMsgMap = AddressingFields.MESSAGE_MAP_FIELD.from(msg, MessageMap.class);
+            curMsgMap.toStart();
         }
-        //переключаем карту сообщений на начало
-        MessageMap curMsgMap = AddressingFields.MESSAGE_MAP_FIELD.from(msg, MessageMap.class);
-        curMsgMap.toStart();
     }
 }

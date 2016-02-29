@@ -107,6 +107,10 @@
         },
         {
           "messageMapId" : "updateFileUploadInfo"
+        },
+        {
+          "target" : "utilityActor",
+          "handler" : "refreshMessageMap"
         }
       ]
     },
@@ -191,6 +195,12 @@
     {
       "id": "folder.encode.Base64Actor",
       "name": "base64Actor",
+      "parameters": {
+      }
+    },
+    {
+      "id": "folder.util.UtilityActor",
+      "name": "utilityActor",
       "parameters": {
       }
     },
