@@ -19,8 +19,6 @@ public class UploadActor extends Actor {
     private Field<String> filePathF;
     /** Тут  путь к системной директории приложения в которой на клиенте хранятся все файлы */
     private Field<String> storageFolderF;
-    /** Полный путь к файлу который хранится в системной директории приложения */
-    private Field<String> filePathAbsF;
     /** Настоящее имя файла*/
     private Field<String> fileOriginNameF;
     /** Имя, присвоенное файлу, для хранения в системной директории приложения */
@@ -47,6 +45,10 @@ public class UploadActor extends Actor {
     private Field<Integer> partSizeF;
     private Field<Boolean> isSentF;
     private Field<String> serverGuidF;
+    /** Полный путь к файлу который хранится в системной директории приложения */
+    private Field<String> phyPathF;
+    private Field<String> logicPathF;
+
 
     private String fileInfoCollectionName;
 
@@ -61,7 +63,6 @@ public class UploadActor extends Actor {
         }
         filePathF = new Field<>(new FieldName("filePath"));
         storageFolderF = new Field<>(new FieldName("storageFolder"));
-        filePathAbsF = new Field<>(new FieldName("filePathAbs"));
         fileSizeF = new Field<>(new FieldName("fileSize"));
         srcF = new Field<>(new FieldName("src"));
         destF = new Field<>(new FieldName("dest"));
@@ -76,21 +77,10 @@ public class UploadActor extends Actor {
         partSizeF = new Field<>(new FieldName("partSize"));
         isSentF = new Field<>(new FieldName("isSent"));
         serverGuidF = new Field<>(new FieldName("serverGuid"));
-    }
-
-    /**
-     * Записать абсолютный путь источника и целевого файла для хранения в системной директории
-     * @param msg содержит filePath - местоположение файла на локальной машине
-     *                     filePathAbs - местоположение копии файла для работы приложения
-     * @throws ReadValueException
-     * @throws ChangeValueException
-     */
-    @Handler("prepareInfoForCopy")
-    public void prepareInfoForCopy(IMessage msg) throws ReadValueException, ChangeValueException {
-
-        String filePathAbs = filePathAbsF.from(msg, String.class);
-        srcF.inject(msg, filePathF.from(msg, String.class));
-        destF.inject(msg, filePathAbs);
+        logicPathF = new Field<>(new FieldName("logicPath"));
+        phyPathF = new Field<>(new FieldName("phyPath"));
+        collectionNameF = new Field<>(new FieldName("collectionName"));
+        insertDataF = new Field<>(new FieldName("insertData"));
     }
 
     /**
@@ -104,13 +94,29 @@ public class UploadActor extends Actor {
     @Handler("prepareFileMetadata")
     public void prepareFileMetadata(IMessage msg) throws ReadValueException, ChangeValueException {
 
-        String[] filePathTokens = filePathF.from(msg, String.class).split("\\\\");
+        String originFilePath = filePathF.from(msg, String.class);
+        String[] filePathTokens = originFilePath.split("\\\\");
         String fileOriginName = filePathTokens[filePathTokens.length - 1];
         fileOriginNameF.inject(msg, fileOriginName);
-        String filePathAbs = storageFolderF.from(msg, String.class) + UUID.randomUUID().toString();
-        filePathAbsF.inject(msg, filePathAbs);
-        File file = new File(filePathAbs);
+        phyPathF.inject(msg, storageFolderF.from(msg, String.class) + "\\" + UUID.randomUUID().toString());
+        logicPathF.inject(msg, logicPathF.from(msg, String.class) + "\\" + fileOriginName);
+        File file = new File(originFilePath);
         fileSizeF.inject(msg, Long.valueOf(file.length()).intValue());
+    }
+
+    /**
+     * Записать абсолютный путь источника и целевого файла для хранения в системной директории
+     * @param msg содержит filePath - местоположение файла на локальной машине
+     *                     filePathAbs - местоположение копии файла для работы приложения
+     * @throws ReadValueException
+     * @throws ChangeValueException
+     */
+    @Handler("prepareInfoForCopy")
+    public void prepareInfoForCopy(IMessage msg) throws ReadValueException, ChangeValueException {
+
+        String filePathAbs = phyPathF.from(msg, String.class);
+        srcF.inject(msg, filePathF.from(msg, String.class));
+        destF.inject(msg, filePathAbs);
     }
 
     /**
@@ -126,8 +132,8 @@ public class UploadActor extends Actor {
         sentPartsF.inject(fileInfo, 0);
         isSentF.inject(fileInfo, Boolean.FALSE);
         fileSizeF.inject(fileInfo, fileSizeF.from(msg, Integer.class));
-        filePathF.inject(fileInfo, filePathAbsF.from(msg, String.class));
-        msg.setValue(new FieldName(filePathF.from(msg, String.class)), fileInfo);
+        phyPathF.inject(fileInfo, phyPathF.from(msg, String.class));
+        msg.setValue(new FieldName(logicPathF.from(msg, String.class).replace('\\', '_')), fileInfo);
     }
 
     /**
@@ -141,7 +147,7 @@ public class UploadActor extends Actor {
 
         IObject insertObj = new SMObject();
         //TODO:Сделать служебным мутабельным именем
-        FieldName filePathFN = new FieldName(filePathF.from(msg, String.class));
+        FieldName filePathFN = new FieldName(logicPathF.from(msg, String.class).replace('\\', '_'));
         IObject fileInfo = (IObject) msg.getValue(filePathFN);
         insertObj.setValue(filePathFN, fileInfo);
         collectionNameF.inject(msg, fileInfoCollectionName);
@@ -151,9 +157,8 @@ public class UploadActor extends Actor {
 
     /**
      * Упаковать информацию о файле для отправки на удаленный сервер
-     * @param msg содержит filePath - местоположение файла на локальной машине
+     * @param msg содержит logicPath - логический путь в директории(включая имя файла)
      *                     fileSize - размер файла
-     *                     fileOriginName - оригинальное имя файла
      * @throws ReadValueException
      * @throws ChangeValueException
      */
@@ -163,8 +168,7 @@ public class UploadActor extends Actor {
         //TODO: IOC.resolve(IObject.class);
         IObject info = new SMObject();
         fileSizeF.inject(info, fileSizeF.from(msg, Integer.class));
-        fileOriginNameF.inject(info, fileOriginNameF.from(msg, String.class));
-        fileIdF.inject(info, filePathF.from(msg, String.class));
+        fileIdF.inject(info, logicPathF.from(msg, String.class));
         postRequestDataF.inject(msg, info);
         remoteMsgMapF.inject(msg, "beginUploadMessageMap");
     }
@@ -194,7 +198,7 @@ public class UploadActor extends Actor {
     @Handler("prepareUploadInfoForStorage")
     public void prepareUploadInfoForStorage(IMessage msg) throws ReadValueException, ChangeValueException {
 
-        FieldName filePathFN = new FieldName(filePathF.from(msg, String.class));
+        FieldName filePathFN = new FieldName(filePathF.from(msg, String.class).replace('\\', '_'));
         IObject fileInfo = (IObject) msg.getValue(filePathFN);
         serverGuidF.inject(fileInfo, serverGuidF.from(msg, String.class));
         partSizeF.inject(fileInfo, partSizeF.from(msg, Integer.class));
@@ -204,7 +208,7 @@ public class UploadActor extends Actor {
     @Handler("finishUpload")
     public void finishUpload(IMessage msg) throws ReadValueException, ChangeValueException {
         //TODO:Сделать служебным мутабельным именем
-        FieldName filePathFN = new FieldName(filePathF.from(msg, String.class));
+        FieldName filePathFN = new FieldName(logicPathF.from(msg, String.class).replace('\\', '_'));
         IObject fileInfo = (IObject) msg.getValue(filePathFN);
         isSentF.inject(fileInfo, Boolean.TRUE);
     }

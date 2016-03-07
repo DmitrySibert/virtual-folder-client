@@ -157,15 +157,6 @@
       }
     },
     {
-      "id": "folder.file.system.FileSystemManagerActor",
-      "name": "fileSystemManagerActor",
-      "parameters": {
-        "sysFolderPath" : "D:\\Programming\\Magistrature\\Executable\\AppSysDirectory",
-        "maxFileCounter" : "10",
-        "getFolderWithCreateMmId" : "getFolderWithCreate"
-      }
-    },
-    {
       "id": "folder.file.FileManagerActor",
       "name": "fileManagerActor",
       "parameters": {
@@ -179,6 +170,16 @@
       }
     },
     {
+      "id": "folder.file.system.FileSystemManagerActor",
+      "name": "fileSystemManagerActor",
+      "parameters": {
+        "sysFolderPath" : "D:\\Programming\\Magistrature\\Executable\\AppSysDirectory",
+        "maxFileCounter" : "10",
+        "getFolderWithCreateMmId" : "getFolderWithCreate"
+      }
+    },
+
+    {
       "id": "folder.upload.PartsMakerActor",
       "name": "partsMakerActor",
       "parameters": {
@@ -187,7 +188,7 @@
       }
     },
     {
-      "id": "folder.console.ActionLogger",
+      "id": "folder.console.ActionLoggerActor",
       "name": "loggerActor",
       "parameters": {
       }
@@ -216,8 +217,8 @@
       "id": "folder.http.ExternalJsonRequestActor",
       "name": "externalJsonRequestActor",
       "parameters": {
-        "serverAddr" : "http://localhost:9098",
-        "clientUri" : "http://localhost:9097"
+        "serverAddr" : "http://localhost:9908",
+        "clientUri" : "http://localhost:9907"
       }
     }
   ],

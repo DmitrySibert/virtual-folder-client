@@ -28,6 +28,9 @@ public class PartsMakerActor extends Actor {
     private Field<String> filePartF;
     private Field<String> serverGuidF;
     private Field<Integer> partNumberF;
+    private Field<String> logicPathF;
+    /** Полный путь к файлу который хранится в системной директории приложения */
+    private Field<String> phyPathF;
     /** Данные для post-запроса*/
     private Field<IObject> postRequestDataF;
     private Field<IObject> postResponseDataF;
@@ -59,6 +62,8 @@ public class PartsMakerActor extends Actor {
         postResponseDataF = new Field<>(new FieldName("postResponseData"));
         remoteMsgMapF = new Field<>(new FieldName("remoteMsgMap"));
         statusF = new Field<>(new FieldName("status"));
+        logicPathF = new Field<>(new FieldName("logicPath"));
+        phyPathF = new Field<>(new FieldName("phyPath"));
 
         try {
             finishUploadMmId = MessageMapId.fromString(
@@ -87,10 +92,10 @@ public class PartsMakerActor extends Actor {
     @Handler("makePart")
     public void makePart(IMessage msg) throws ReadValueException, ChangeValueException, DeleteValueException {
 
-        fieldName.setName(filePathF.from(msg, String.class));
+        fieldName.setName(logicPathF.from(msg, String.class).replace('\\', '_'));
         IObject fileInfo = (IObject) msg.getValue(fieldName);
         if (!sentPartsF.from(fileInfo, Integer.class).equals(partsQuantityF.from(fileInfo, Integer.class))) {
-            String sysFilePath = filePathF.from(fileInfo, String.class);
+            String sysFilePath = phyPathF.from(fileInfo, String.class);
             byte[] part = null;
             try {
                 byte[] data = Files.readAllBytes(Paths.get(sysFilePath));
@@ -115,7 +120,7 @@ public class PartsMakerActor extends Actor {
     public void formPostRequest(IMessage msg) throws ChangeValueException, ReadValueException {
 
         IObject postData = new SMObject();
-        fieldName.setName(filePathF.from(msg, String.class));
+        fieldName.setName(logicPathF.from(msg, String.class));
 
         IObject fileInfo = (IObject) msg.getValue(fieldName);
         serverGuidF.inject(postData, serverGuidF.from(fileInfo, String.class));
@@ -132,7 +137,7 @@ public class PartsMakerActor extends Actor {
         IObject data = postResponseDataF.from(msg, IObject.class);
         if(statusF.from(msg, Boolean.class)) {
             //увеличиваем счетчик отосланных кусков
-            fieldName.setName(filePathF.from(msg, String.class));
+            fieldName.setName(logicPathF.from(msg, String.class).replace('\\', '_'));
             IObject fileInfo = (IObject) msg.getValue(fieldName);
             sentPartsF.inject(fileInfo, sentPartsF.from(fileInfo, Integer.class) + 1);
         } else {

@@ -47,11 +47,11 @@ public class ExternalJsonRequestActor extends Actor {
                     responseBodyBuf = new SMObject(msg.content().toString(Charsets.UTF_8));
                 }
             };
-            client = new HttpClient(new URI(serverAddr), handler);
+            client = new HttpClient(new URI("http://localhost:9090"), handler);
             client.start().get();
         } catch (Exception e) {
 
-            String errMsg = "An error occurred while creating ExternalJsonRequestActor: ";
+            String errMsg = "An error occurred while creating ExternalJsonRequestActor: " + e;
             System.out.println(errMsg);
             throw new RuntimeException(errMsg, e);
         }
