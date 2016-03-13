@@ -31,7 +31,7 @@ public class Base64Actor extends Actor {
     public void encode(IMessage msg) throws ReadValueException, ChangeValueException {
 
         List<Byte> targ = encodeTargetF.from(msg, Byte.class);
-        String encodeStr = Base64.getEncoder().withoutPadding().encodeToString(Bytes.toArray(targ));
+        String encodeStr = Base64.getUrlEncoder().withoutPadding().encodeToString(Bytes.toArray(targ));
         encodeResultF.inject(msg, encodeStr);
     }
 
@@ -39,7 +39,7 @@ public class Base64Actor extends Actor {
     public void decode(IMessage msg) throws ReadValueException, ChangeValueException {
 
         String targ = decodeTargetF.from(msg, String.class);
-        byte[] decodeRes = Base64.getDecoder().decode(targ);
+        byte[] decodeRes = Base64.getUrlDecoder().decode(targ);
         decodeResultF.inject(msg, Bytes.asList(decodeRes));
     }
 }

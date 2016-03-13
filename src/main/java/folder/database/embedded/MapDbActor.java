@@ -38,17 +38,10 @@ public class MapDbActor extends Actor {
             throw new RuntimeException(err);
         }
 
-        System.out.println(dbFilePath);
-        try {
-            db = DBMaker.fileDB(new File(dbFilePath))
-                    .closeOnJvmShutdown()
-                    .encryptionEnable(dbFilePassword)
-                    .make();
-        } catch (Exception e) {
-            System.out.println(e);
-            throw new RuntimeException(e);
-        }
-        System.out.println("mapDBvishla");
+        db = DBMaker.fileDB(new File(dbFilePath))
+                .closeOnJvmShutdown()
+                .encryptionEnable(dbFilePassword)
+                .make();
     }
 
     @Handler("insert")

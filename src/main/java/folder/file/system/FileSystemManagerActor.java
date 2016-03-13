@@ -75,7 +75,6 @@ public class FileSystemManagerActor extends Actor {
             System.out.println(e.toString());
             throw new RuntimeException(e);
         }
-        System.out.println("4erepaha vishla");
     }
 
     private Integer getFolderOrderNum(String folderName) {

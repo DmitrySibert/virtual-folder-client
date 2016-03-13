@@ -12,7 +12,18 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpVersion;
+import org.apache.http.*;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
@@ -29,7 +40,7 @@ public class ExternalJsonRequestActor extends Actor {
     private String serverAddr;
     private String clientUri;
 
-    private HttpClient client;
+    private CloseableHttpClient client;
     private IObject responseBodyBuf;
 
     public ExternalJsonRequestActor(IObject params) {
@@ -40,15 +51,7 @@ public class ExternalJsonRequestActor extends Actor {
             remoteMsgMapF = new Field<>(new FieldName("remoteMsgMap"));
             postRequestDataF = new Field<>(new FieldName("postRequestData"));
             postResponseDataF = new Field<>(new FieldName("postResponseData"));
-            ChannelInboundHandler handler = new SimpleChannelInboundHandler<FullHttpResponse>(FullHttpResponse.class) {
-                @Override
-                protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse msg) throws Exception {
-                    //TODO: IOC.resolve(IObject.class);
-                    responseBodyBuf = new SMObject(msg.content().toString(Charsets.UTF_8));
-                }
-            };
-            client = new HttpClient(new URI("http://localhost:9090"), handler);
-            client.start().get();
+            client = HttpClients.createDefault();
         } catch (Exception e) {
 
             String errMsg = "An error occurred while creating ExternalJsonRequestActor: " + e;
@@ -58,11 +61,8 @@ public class ExternalJsonRequestActor extends Actor {
     }
 
     @Handler("post")
-    public void post(IMessage msg) throws ChangeValueException, ReadValueException, ExecutionException, InterruptedException {
+    public void post(IMessage msg) throws ChangeValueException, ReadValueException, ExecutionException, InterruptedException, IOException {
 
-        FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, serverAddr);
-        request.headers().set(HttpHeaders.Names.HOST, "localhost");
-        request.headers().set(HttpHeaders.Names.CONTENT_TYPE, "application/json");
 
         StringBuilder requestBody = new StringBuilder();
         requestBody
@@ -79,13 +79,16 @@ public class ExternalJsonRequestActor extends Actor {
         requestBody.append("\"").append("status").append("\"").append(":");
         requestBody.append("\"").append("ok").append("\"");
         requestBody.append("}");
+        StringEntity input = new StringEntity(requestBody.toString().replace("\\", "\\\\"), StandardCharsets.UTF_8);
+        input.setContentType("application/json");
+        HttpPost post = new HttpPost(serverAddr);
+        post.setHeader("Content-type", "application/json");
+        post.setEntity(input);
 
-        ByteBuf bbuf = Unpooled.copiedBuffer(requestBody.toString(), StandardCharsets.UTF_8);
-        request.headers().set(HttpHeaders.Names.CONTENT_LENGTH, bbuf.readableBytes());
-        request.content().clear().writeBytes(bbuf);
-        request.headers().set(HttpHeaders.Names.ACCEPT_ENCODING, HttpHeaders.Values.GZIP);
-        client.send(request);
+        HttpResponse response = client.execute(post);
+        BufferedReader br = new BufferedReader(
+                new InputStreamReader((response.getEntity().getContent())));
 
-        postResponseDataF.inject(msg, responseBodyBuf);
+        postResponseDataF.inject(msg, new SMObject(br.readLine()));
     }
 }

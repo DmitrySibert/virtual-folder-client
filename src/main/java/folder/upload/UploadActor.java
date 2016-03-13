@@ -49,6 +49,7 @@ public class UploadActor extends Actor {
     private Field<String> phyPathF;
     private Field<String> logicPathF;
 
+    private Field<Boolean> statusF;
 
     private String fileInfoCollectionName;
 
@@ -81,6 +82,7 @@ public class UploadActor extends Actor {
         phyPathF = new Field<>(new FieldName("phyPath"));
         collectionNameF = new Field<>(new FieldName("collectionName"));
         insertDataF = new Field<>(new FieldName("insertData"));
+        statusF = new Field<>(new FieldName("status"));
     }
 
     /**
@@ -102,6 +104,9 @@ public class UploadActor extends Actor {
         logicPathF.inject(msg, logicPathF.from(msg, String.class) + "\\" + fileOriginName);
         File file = new File(originFilePath);
         fileSizeF.inject(msg, Long.valueOf(file.length()).intValue());
+        respondOn(msg, response -> {
+            statusF.inject(response, Boolean.TRUE);
+        });
     }
 
     /**
@@ -170,7 +175,7 @@ public class UploadActor extends Actor {
         fileSizeF.inject(info, fileSizeF.from(msg, Integer.class));
         fileIdF.inject(info, logicPathF.from(msg, String.class));
         postRequestDataF.inject(msg, info);
-        remoteMsgMapF.inject(msg, "beginUploadMessageMap");
+        remoteMsgMapF.inject(msg, "initFileReceivingMm");
     }
 
     /**
@@ -198,7 +203,7 @@ public class UploadActor extends Actor {
     @Handler("prepareUploadInfoForStorage")
     public void prepareUploadInfoForStorage(IMessage msg) throws ReadValueException, ChangeValueException {
 
-        FieldName filePathFN = new FieldName(filePathF.from(msg, String.class).replace('\\', '_'));
+        FieldName filePathFN = new FieldName(logicPathF.from(msg, String.class).replace('\\', '_'));
         IObject fileInfo = (IObject) msg.getValue(filePathFN);
         serverGuidF.inject(fileInfo, serverGuidF.from(msg, String.class));
         partSizeF.inject(fileInfo, partSizeF.from(msg, Integer.class));

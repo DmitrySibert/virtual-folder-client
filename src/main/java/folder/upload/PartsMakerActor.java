@@ -9,6 +9,7 @@ import info.smart_tools.smartactors.core.addressing.IMessageMapId;
 import info.smart_tools.smartactors.core.addressing.MessageMapId;
 import info.smart_tools.smartactors.core.addressing.maps.MessageMap;
 import info.smart_tools.smartactors.core.impl.SMObject;
+import info.smart_tools.smartactors.utils.ioc.IOC;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -65,6 +66,7 @@ public class PartsMakerActor extends Actor {
         logicPathF = new Field<>(new FieldName("logicPath"));
         phyPathF = new Field<>(new FieldName("phyPath"));
 
+        fieldName = new MutableFieldName("default");
         try {
             finishUploadMmId = MessageMapId.fromString(
                     new Field<String>(new FieldName("finishUploadMmId")).from(params, String.class)
@@ -83,8 +85,7 @@ public class PartsMakerActor extends Actor {
     public void initPartsUpload(IMessage msg) throws DeleteValueException, ChangeValueException {
 
         AddressingFields.MESSAGE_MAP_FIELD.delete(msg);
-        //TODO: resolve with IOC??
-        IObject addrF = new SMObject();
+        IObject addrF = IOC.resolve(IObject.class);
         AddressingFields.MESSAGE_MAP_ID_FIELD.inject(addrF, uploadFilePartMmId);
         AddressingFields.ADDRESS_FIELD.inject(msg, addrF);
     }
@@ -120,7 +121,7 @@ public class PartsMakerActor extends Actor {
     public void formPostRequest(IMessage msg) throws ChangeValueException, ReadValueException {
 
         IObject postData = new SMObject();
-        fieldName.setName(logicPathF.from(msg, String.class));
+        fieldName.setName(logicPathF.from(msg, String.class).replace('\\', '_'));
 
         IObject fileInfo = (IObject) msg.getValue(fieldName);
         serverGuidF.inject(postData, serverGuidF.from(fileInfo, String.class));
@@ -128,14 +129,14 @@ public class PartsMakerActor extends Actor {
         partNumberF.inject(postData, sentPartsF.from(fileInfo, Integer.class) + 1);
 
         postRequestDataF.inject(msg, postData);
-        remoteMsgMapF.inject(msg, "uploadFilePart");
+        remoteMsgMapF.inject(msg, "filePartReceivingMm");
     }
 
     @Handler("handleFilePartSend")
     public void handleFilePartSend(IMessage msg) throws ReadValueException, ChangeValueException {
 
         IObject data = postResponseDataF.from(msg, IObject.class);
-        if(statusF.from(msg, Boolean.class)) {
+        if(statusF.from(data, Boolean.class)) {
             //увеличиваем счетчик отосланных кусков
             fieldName.setName(logicPathF.from(msg, String.class).replace('\\', '_'));
             IObject fileInfo = (IObject) msg.getValue(fieldName);

@@ -24,6 +24,9 @@
           "handler" : "prepareFileMetadata"
         },
         {
+          "target" : "exchanging"
+        },
+        {
           "target" : "uploadActor",
           "handler" : "prepareInfoForCopy"
         },
@@ -61,7 +64,7 @@
         },
         {
           "target" : "uploadActor",
-          "handler" : "markDataForStorage"
+          "handler" : "markFileInfoForStorage"
         },
         {
           "target" : "mapDbActor",
@@ -69,7 +72,7 @@
         },
         {
           "target" : "partsMakerActor",
-          "handler" : "makePart"
+          "handler" : "initPartsUpload"
         }
       ]
     },
@@ -102,11 +105,20 @@
           "handler" : "formFilePartRequest"
         },
         {
+          "target" : "externalJsonRequestActor",
+          "handler" : "post"
+        },
+        {
           "target" : "partsMakerActor",
           "handler" : "handleFilePartSend"
         },
         {
-          "messageMapId" : "updateFileUploadInfo"
+          "target" : "uploadActor",
+          "handler" : "markFileInfoForStorage"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "insert"
         },
         {
           "target" : "utilityActor",
@@ -122,7 +134,12 @@
           "handler" : "finishUpload"
         },
         {
-          "messageMapId" : "updateFileUploadInfo"
+          "target" : "uploadActor",
+          "handler" : "markFileInfoForStorage"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "insert"
         }
       ]
     },
@@ -217,7 +234,7 @@
       "id": "folder.http.ExternalJsonRequestActor",
       "name": "externalJsonRequestActor",
       "parameters": {
-        "serverAddr" : "http://localhost:9908",
+        "serverAddr" : "http://localhost:9909",
         "clientUri" : "http://localhost:9907"
       }
     }
