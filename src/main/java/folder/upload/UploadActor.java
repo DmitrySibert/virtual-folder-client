@@ -1,9 +1,12 @@
 package folder.upload;
 
+import folder.http.PostRequestFields;
+import folder.util.FileInfoFields;
 import info.smart_tools.smartactors.core.*;
 import info.smart_tools.smartactors.core.actors.Actor;
 import info.smart_tools.smartactors.core.actors.annotations.Handler;
 import info.smart_tools.smartactors.core.impl.SMObject;
+import info.smart_tools.smartactors.utils.ioc.IOC;
 
 import java.io.File;
 import java.util.UUID;
@@ -26,30 +29,14 @@ public class UploadActor extends Actor {
     //TODO: Если вдруг, что мало вероятно, почти нереально, что файлы будут больше чем (2 гбайт - 1 байт)
     //TODO: то придется переходить на размер Long и переписывать некоторые куски приложения
     //TODO: не думаю, что кто-то будет использовать это приложение для таких больших файлов
-    private Field<Integer> fileSizeF;
+
     private Field<String> srcF;
     private Field<String> destF;
-    /** Данные для post-запроса*/
-    private Field<IObject> postRequestDataF;
-    private Field<IObject> postResponseDataF;
-    private Field<String> remoteMsgMapF;
-
     /** Поле для имени коллекции для сохранения */
     private Field<String> collectionNameF;
     /** Поле с данными для сохранение*/
     private Field<IObject> insertDataF;
-
-    /** Информация по файлу */
-    private Field<Integer> sentPartsF;
-    private Field<Integer> partsQuantityF;
-    private Field<Integer> partSizeF;
-    private Field<Boolean> isSentF;
-    private Field<String> serverGuidF;
-    /** Полный путь к файлу который хранится в системной директории приложения */
-    private Field<String> phyPathF;
-    private Field<String> logicPathF;
-
-    private Field<Boolean> statusF;
+    private Field<Boolean> statusF = new Field<>(new FieldName("status"));
 
     private String fileInfoCollectionName;
 
@@ -64,25 +51,13 @@ public class UploadActor extends Actor {
         }
         filePathF = new Field<>(new FieldName("filePath"));
         storageFolderF = new Field<>(new FieldName("storageFolder"));
-        fileSizeF = new Field<>(new FieldName("fileSize"));
         srcF = new Field<>(new FieldName("src"));
         destF = new Field<>(new FieldName("dest"));
-        postRequestDataF = new Field<>(new FieldName("postRequestData"));
-        postResponseDataF = new Field<>(new FieldName("postResponseData"));
         folderDestPathF = new Field<>(new FieldName("folderDestPath"));
         fileOriginNameF = new Field<>(new FieldName("fileOriginName"));
         fileIdF = new Field<>(new FieldName("fileId"));
-        remoteMsgMapF = new Field<>(new FieldName("remoteMsgMap"));
-        sentPartsF = new Field<>(new FieldName("sentParts"));
-        partsQuantityF = new Field<>(new FieldName("partsQuantity"));
-        partSizeF = new Field<>(new FieldName("partSize"));
-        isSentF = new Field<>(new FieldName("isSent"));
-        serverGuidF = new Field<>(new FieldName("serverGuid"));
-        logicPathF = new Field<>(new FieldName("logicPath"));
-        phyPathF = new Field<>(new FieldName("phyPath"));
         collectionNameF = new Field<>(new FieldName("collectionName"));
         insertDataF = new Field<>(new FieldName("insertData"));
-        statusF = new Field<>(new FieldName("status"));
     }
 
     /**
@@ -100,10 +75,12 @@ public class UploadActor extends Actor {
         String[] filePathTokens = originFilePath.split("\\\\");
         String fileOriginName = filePathTokens[filePathTokens.length - 1];
         fileOriginNameF.inject(msg, fileOriginName);
-        phyPathF.inject(msg, storageFolderF.from(msg, String.class) + "\\" + UUID.randomUUID().toString());
-        logicPathF.inject(msg, logicPathF.from(msg, String.class) + "\\" + fileOriginName);
+        FileInfoFields.PHYSIC_PATH.inject(
+                msg, storageFolderF.from(msg, String.class) + "\\" + UUID.randomUUID().toString()
+        );
+        FileInfoFields.LOGIC_PATH.inject(msg, FileInfoFields.LOGIC_PATH.from(msg, String.class) + "\\" + fileOriginName);
         File file = new File(originFilePath);
-        fileSizeF.inject(msg, Long.valueOf(file.length()).intValue());
+        FileInfoFields.FILE_SIZE.inject(msg, Long.valueOf(file.length()).intValue());
         respondOn(msg, response -> {
             statusF.inject(response, Boolean.TRUE);
         });
@@ -119,7 +96,7 @@ public class UploadActor extends Actor {
     @Handler("prepareInfoForCopy")
     public void prepareInfoForCopy(IMessage msg) throws ReadValueException, ChangeValueException {
 
-        String filePathAbs = phyPathF.from(msg, String.class);
+        String filePathAbs = FileInfoFields.PHYSIC_PATH.from(msg, String.class);
         srcF.inject(msg, filePathF.from(msg, String.class));
         destF.inject(msg, filePathAbs);
     }
@@ -133,12 +110,12 @@ public class UploadActor extends Actor {
     @Handler("prepareFileInfo")
     public void prepareFileInfo(IMessage msg) throws ReadValueException, ChangeValueException {
 
-        IObject fileInfo = new SMObject();
-        sentPartsF.inject(fileInfo, 0);
-        isSentF.inject(fileInfo, Boolean.FALSE);
-        fileSizeF.inject(fileInfo, fileSizeF.from(msg, Integer.class));
-        phyPathF.inject(fileInfo, phyPathF.from(msg, String.class));
-        msg.setValue(new FieldName(logicPathF.from(msg, String.class).replace('\\', '_')), fileInfo);
+        IObject fileInfo = IOC.resolve(IObject.class);
+        FileInfoFields.SENT_PARTS.inject(fileInfo, 0);
+        FileInfoFields.IS_SENT.inject(fileInfo, Boolean.FALSE);
+        FileInfoFields.FILE_SIZE.inject(fileInfo, FileInfoFields.FILE_SIZE.from(msg, Integer.class));
+        FileInfoFields.PHYSIC_PATH.inject(fileInfo, FileInfoFields.PHYSIC_PATH.from(msg, String.class));
+        msg.setValue(new FieldName(FileInfoFields.LOGIC_PATH.from(msg, String.class).replace('\\', '_')), fileInfo);
     }
 
     /**
@@ -152,7 +129,7 @@ public class UploadActor extends Actor {
 
         IObject insertObj = new SMObject();
         //TODO:Сделать служебным мутабельным именем
-        FieldName filePathFN = new FieldName(logicPathF.from(msg, String.class).replace('\\', '_'));
+        FieldName filePathFN = new FieldName(FileInfoFields.LOGIC_PATH.from(msg, String.class).replace('\\', '_'));
         IObject fileInfo = (IObject) msg.getValue(filePathFN);
         insertObj.setValue(filePathFN, fileInfo);
         collectionNameF.inject(msg, fileInfoCollectionName);
@@ -170,12 +147,11 @@ public class UploadActor extends Actor {
     @Handler("formInfoForServer")
     public void formInfoForServer(IMessage msg) throws ReadValueException, ChangeValueException {
 
-        //TODO: IOC.resolve(IObject.class);
-        IObject info = new SMObject();
-        fileSizeF.inject(info, fileSizeF.from(msg, Integer.class));
-        fileIdF.inject(info, logicPathF.from(msg, String.class));
-        postRequestDataF.inject(msg, info);
-        remoteMsgMapF.inject(msg, "initFileReceivingMm");
+        IObject info = IOC.resolve(IObject.class);
+        FileInfoFields.FILE_SIZE.inject(info, FileInfoFields.FILE_SIZE.from(msg, Integer.class));
+        fileIdF.inject(info, FileInfoFields.LOGIC_PATH.from(msg, String.class));
+        PostRequestFields.POST_REQUEST_DATA.inject(msg, info);
+        PostRequestFields.REMOTE_MSG_MAP.inject(msg, "initFileReceivingMm");
     }
 
     /**
@@ -187,11 +163,11 @@ public class UploadActor extends Actor {
     @Handler("handleUploadInfoFromServer")
     public void handleUploadInfoFromServer(IMessage msg) throws ReadValueException, ChangeValueException {
 
-        IObject data = postResponseDataF.from(msg, IObject.class);
+        IObject data = PostRequestFields.POST_RESPONSE_DATA.from(msg, IObject.class);
         fileIdF.inject(msg, fileIdF.from(data, String.class));
-        serverGuidF.inject(msg, serverGuidF.from(data, String.class));
-        partSizeF.inject(msg, partSizeF.from(data, Integer.class));
-        partsQuantityF.inject(msg, partsQuantityF.from(data, Integer.class));
+        FileInfoFields.SERVER_GUID.inject(msg, FileInfoFields.SERVER_GUID.from(data, String.class));
+        FileInfoFields.PART_SIZE.inject(msg, FileInfoFields.PART_SIZE.from(data, Integer.class));
+        FileInfoFields.PARTS_QUANTITY.inject(msg, FileInfoFields.PARTS_QUANTITY.from(data, Integer.class));
     }
 
     /**
@@ -203,18 +179,18 @@ public class UploadActor extends Actor {
     @Handler("prepareUploadInfoForStorage")
     public void prepareUploadInfoForStorage(IMessage msg) throws ReadValueException, ChangeValueException {
 
-        FieldName filePathFN = new FieldName(logicPathF.from(msg, String.class).replace('\\', '_'));
+        FieldName filePathFN = new FieldName(FileInfoFields.LOGIC_PATH.from(msg, String.class).replace('\\', '_'));
         IObject fileInfo = (IObject) msg.getValue(filePathFN);
-        serverGuidF.inject(fileInfo, serverGuidF.from(msg, String.class));
-        partSizeF.inject(fileInfo, partSizeF.from(msg, Integer.class));
-        partsQuantityF.inject(fileInfo, partsQuantityF.from(msg, Integer.class));
+        FileInfoFields.SERVER_GUID.inject(fileInfo, FileInfoFields.SERVER_GUID.from(msg, String.class));
+        FileInfoFields.PART_SIZE.inject(fileInfo, FileInfoFields.PART_SIZE.from(msg, Integer.class));
+        FileInfoFields.PARTS_QUANTITY.inject(fileInfo, FileInfoFields.PARTS_QUANTITY.from(msg, Integer.class));
     }
 
     @Handler("finishUpload")
     public void finishUpload(IMessage msg) throws ReadValueException, ChangeValueException {
         //TODO:Сделать служебным мутабельным именем
-        FieldName filePathFN = new FieldName(logicPathF.from(msg, String.class).replace('\\', '_'));
+        FieldName filePathFN = new FieldName(FileInfoFields.LOGIC_PATH.from(msg, String.class).replace('\\', '_'));
         IObject fileInfo = (IObject) msg.getValue(filePathFN);
-        isSentF.inject(fileInfo, Boolean.TRUE);
+        FileInfoFields.IS_SENT.inject(fileInfo, Boolean.TRUE);
     }
 }

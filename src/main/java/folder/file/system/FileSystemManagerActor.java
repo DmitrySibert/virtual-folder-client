@@ -102,7 +102,7 @@ public class FileSystemManagerActor extends Actor {
             mmF.from(msg, MessageMap.class).insertMessageMapId(MessageMapId.fromString(getFolderWithCreateMmId));
         } else {
             fileCounter++;
-            storageFolderF.inject(msg, sysFolderPath + "\\" +curFolderName);
+            storageFolderF.inject(msg, sysFolderPath + "\\" + curFolderName);
         }
     }
 }

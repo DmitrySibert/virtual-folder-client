@@ -1,6 +1,7 @@
 package folder.upload;
 
 import com.google.common.primitives.Bytes;
+import folder.http.PostRequestFields;
 import info.smart_tools.smartactors.core.*;
 import info.smart_tools.smartactors.core.actors.Actor;
 import info.smart_tools.smartactors.core.actors.annotations.Handler;
@@ -32,10 +33,6 @@ public class PartsMakerActor extends Actor {
     private Field<String> logicPathF;
     /** Полный путь к файлу который хранится в системной директории приложения */
     private Field<String> phyPathF;
-    /** Данные для post-запроса*/
-    private Field<IObject> postRequestDataF;
-    private Field<IObject> postResponseDataF;
-    private Field<String> remoteMsgMapF;
     /** Данные об отправке куска файла */
     private Field<Boolean> statusF;
     /** Данные для кодирования */
@@ -59,9 +56,6 @@ public class PartsMakerActor extends Actor {
         encodeTargetF = new ListField<>(new FieldName("encodeTarget"));
         encodeResultF = new Field<>(new FieldName("encodeResult"));
 
-        postRequestDataF = new Field<>(new FieldName("postRequestData"));
-        postResponseDataF = new Field<>(new FieldName("postResponseData"));
-        remoteMsgMapF = new Field<>(new FieldName("remoteMsgMap"));
         statusF = new Field<>(new FieldName("status"));
         logicPathF = new Field<>(new FieldName("logicPath"));
         phyPathF = new Field<>(new FieldName("phyPath"));
@@ -99,6 +93,7 @@ public class PartsMakerActor extends Actor {
             String sysFilePath = phyPathF.from(fileInfo, String.class);
             byte[] part = null;
             try {
+                //TODO: RandomAccessFile взять, возможно будет быстрее
                 byte[] data = Files.readAllBytes(Paths.get(sysFilePath));
                 Integer from = sentPartsF.from(fileInfo, Integer.class) * partSizeF.from(fileInfo, Integer.class);
                 Integer to = from + partSizeF.from(fileInfo, Integer.class) - 1;
@@ -120,7 +115,7 @@ public class PartsMakerActor extends Actor {
     @Handler("formFilePartRequest")
     public void formPostRequest(IMessage msg) throws ChangeValueException, ReadValueException {
 
-        IObject postData = new SMObject();
+        IObject postData = IOC.resolve(IObject.class);
         fieldName.setName(logicPathF.from(msg, String.class).replace('\\', '_'));
 
         IObject fileInfo = (IObject) msg.getValue(fieldName);
@@ -128,14 +123,14 @@ public class PartsMakerActor extends Actor {
         filePartF.inject(postData, encodeResultF.from(msg, String.class));
         partNumberF.inject(postData, sentPartsF.from(fileInfo, Integer.class) + 1);
 
-        postRequestDataF.inject(msg, postData);
-        remoteMsgMapF.inject(msg, "filePartReceivingMm");
+        PostRequestFields.POST_REQUEST_DATA.inject(msg, postData);
+        PostRequestFields.REMOTE_MSG_MAP.inject(msg, "filePartReceivingMm");
     }
 
     @Handler("handleFilePartSend")
     public void handleFilePartSend(IMessage msg) throws ReadValueException, ChangeValueException {
 
-        IObject data = postResponseDataF.from(msg, IObject.class);
+        IObject data = PostRequestFields.POST_RESPONSE_DATA.from(msg, IObject.class);
         if(statusF.from(data, Boolean.class)) {
             //увеличиваем счетчик отосланных кусков
             fieldName.setName(logicPathF.from(msg, String.class).replace('\\', '_'));

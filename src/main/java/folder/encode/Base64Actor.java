@@ -13,33 +13,22 @@ import java.util.List;
  */
 public class Base64Actor extends Actor {
 
-    private ListField<Byte> encodeTargetF;
-    private Field<String> encodeResultF;
-
-    private Field<String> decodeTargetF;
-    private ListField<Byte> decodeResultF;
-
     public Base64Actor(IObject params) {
-
-        encodeTargetF = new ListField<>(new FieldName("encodeTarget"));
-        encodeResultF = new Field<>(new FieldName("encodeResult"));
-        decodeTargetF = new Field<>(new FieldName("decodeTarget"));
-        decodeResultF = new ListField<>(new FieldName("decodeResult"));
     }
 
     @Handler("encode")
     public void encode(IMessage msg) throws ReadValueException, ChangeValueException {
 
-        List<Byte> targ = encodeTargetF.from(msg, Byte.class);
+        List<Byte> targ = EncodeFields.ENCODE_TARGET.from(msg, Byte.class);
         String encodeStr = Base64.getUrlEncoder().withoutPadding().encodeToString(Bytes.toArray(targ));
-        encodeResultF.inject(msg, encodeStr);
+        EncodeFields.ENCODE_RESULT.inject(msg, encodeStr);
     }
 
     @Handler("decode")
     public void decode(IMessage msg) throws ReadValueException, ChangeValueException {
 
-        String targ = decodeTargetF.from(msg, String.class);
+        String targ = EncodeFields.DECODE_TARGET.from(msg, String.class);
         byte[] decodeRes = Base64.getUrlDecoder().decode(targ);
-        decodeResultF.inject(msg, Bytes.asList(decodeRes));
+        EncodeFields.DECODE_RESULT.inject(msg, Bytes.asList(decodeRes));
     }
 }

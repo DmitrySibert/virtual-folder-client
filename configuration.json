@@ -8,6 +8,26 @@
           "handler" : "getContentByPath"
         },
         {
+          "target" : "externalJsonRequestActor",
+          "handler" : "post"
+        },
+        {
+          "target" : "contentActor",
+          "handler" : "handleContentRequest"
+        },
+        {
+          "target" : "contentActor",
+          "handler" : "formFilesSrchQuery"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "get"
+        },
+        {
+          "target" : "contentActor",
+          "handler" : "handleLocalContent"
+        },
+        {
           "target" : "exchanging"
         }
       ]
@@ -157,6 +177,102 @@
       ]
     },
     {
+      "id" : "downloadFromServer",
+      "path" : [
+        {
+          "target" : "downloadActor",
+          "handler" : "formFilesInfoRequest"
+        },
+        {
+          "target" : "externalJsonRequestActor",
+          "handler" : "post"
+        },
+        {
+          "target" : "downloadActor",
+          "handler" : "handleDownloadInfoFromServer"
+        }
+      ]
+    },
+    {
+      "id" : "initDownloadFile",
+      "path" : [
+        {
+          "target" : "fileSystemManagerActor",
+          "handler" : "getCurrentFolder"
+        },
+        {
+          "target" : "downloadActor",
+          "handler" : "prepareFileInfo"
+        },
+        {
+          "target" : "uploadActor",
+          "handler" : "markFileInfoForStorage"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "insert"
+        },
+        {
+          "target" : "fileManagerActor",
+          "handler" : "createFileWithSize"
+        },
+        {
+          "target" : "downloadActor",
+          "handler" : "initFileDownload"
+        }
+      ]
+    },
+    {
+      "id" : "downloadFileMm",
+      "path" : [
+        {
+          "target" : "downloadActor",
+          "handler" : "formFilePartRequest"
+        },
+        {
+          "target" : "externalJsonRequestActor",
+          "handler" : "post"
+        },
+        {
+          "target" : "downloadActor",
+          "handler" : "handleFilePartReceiving"
+        },
+        {
+          "target" : "base64Actor",
+          "handler" : "decode"
+        },
+        {
+          "target" : "downloadActor",
+          "handler" : "saveFilePart"
+        },
+        {
+          "target" : "uploadActor",
+          "handler" : "markFileInfoForStorage"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "insert"
+        },
+        {
+          "target" : "downloadActor",
+          "handler" : "checkEnding"
+        }
+      ]
+    },
+    {
+      "id" : "finishFileDownloadMm",
+      "path" : [
+        {
+          "target" : "uploadActor",
+          "handler" : "markFileInfoForStorage"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "insert"
+        }
+      ]
+    },
+    {
       "id" : "loggerId",
       "path" : [
         {
@@ -171,6 +287,9 @@
       "id": "folder.content.ContentActor",
       "name": "contentActor",
       "parameters": {
+        "contentFromSrvMm" : "folderContent",
+        "downloadFromSrvMm" : "downloadFromServer",
+        "fileInfoCollectionName" : "file_info"
       }
     },
     {
@@ -184,6 +303,17 @@
       "name": "uploadActor",
       "parameters": {
         "fileInfoCollectionName" : "file_info"
+      }
+    },
+    {
+      "id": "folder.download.DownloadActor",
+      "name": "downloadActor",
+      "parameters": {
+        "filesInfoMm" : "filesInfo",
+        "initDownloadFileMm" : "initDownloadFile",
+        "downloadFileMm" : "downloadFile",
+        "getFilePartMm" : "getFilePart",
+        "finishFileDownloadMm" : "finishFileDownload"
       }
     },
     {
