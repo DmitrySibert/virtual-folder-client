@@ -85,7 +85,10 @@ public class DownloadActor extends Actor {
             IObject addrF = IOC.resolve(IObject.class);
             AddressingFields.MESSAGE_MAP_ID_FIELD.inject(addrF, MessageMapId.fromString(initDownloadFileMm));
             AddressingFields.ADDRESS_FIELD.inject(dwnldMsg, addrF);
-            FileInfoFields.LOGIC_PATH.inject(dwnldMsg, FileInfoFields.LOGIC_PATH.from(file, String.class));
+            FileInfoFields.LOGIC_PATH.inject(
+                    dwnldMsg, FileInfoFields.LOGIC_PATH.from(file, String.class) + "\\" +
+                    FileInfoFields.ORIGINAL_NAME.from(file, String.class)
+            );
             FileInfoFields.SERVER_GUID.inject(dwnldMsg, FileInfoFields.SERVER_GUID.from(file, String.class));
             FileInfoFields.PARTS_QUANTITY.inject(dwnldMsg, FileInfoFields.PARTS_QUANTITY.from(file, Integer.class));
             FileInfoFields.PART_SIZE.inject(dwnldMsg, FileInfoFields.PART_SIZE.from(file, Integer.class));

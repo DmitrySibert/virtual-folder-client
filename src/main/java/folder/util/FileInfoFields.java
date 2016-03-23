@@ -18,5 +18,6 @@ public class FileInfoFields {
     public static final Field<String> SERVER_GUID = new Field<>(new FieldName("serverGuid"));
     public static final Field<String> LOGIC_PATH = new Field<>(new FieldName("logicPath"));
     public static final Field<String> PHYSIC_PATH = new Field<>(new FieldName("phyPath"));
+    public static final Field<String> ORIGINAL_NAME = new Field<>(new FieldName("originalName"));
 
 }

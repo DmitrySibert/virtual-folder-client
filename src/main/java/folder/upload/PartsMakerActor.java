@@ -2,6 +2,7 @@ package folder.upload;
 
 import com.google.common.primitives.Bytes;
 import folder.http.PostRequestFields;
+import folder.util.FileInfoFields;
 import info.smart_tools.smartactors.core.*;
 import info.smart_tools.smartactors.core.actors.Actor;
 import info.smart_tools.smartactors.core.actors.annotations.Handler;
@@ -13,6 +14,7 @@ import info.smart_tools.smartactors.core.impl.SMObject;
 import info.smart_tools.smartactors.utils.ioc.IOC;
 
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -90,15 +92,14 @@ public class PartsMakerActor extends Actor {
         fieldName.setName(logicPathF.from(msg, String.class).replace('\\', '_'));
         IObject fileInfo = (IObject) msg.getValue(fieldName);
         if (!sentPartsF.from(fileInfo, Integer.class).equals(partsQuantityF.from(fileInfo, Integer.class))) {
-            String sysFilePath = phyPathF.from(fileInfo, String.class);
-            byte[] part = null;
+            String phyPath = FileInfoFields.PHYSIC_PATH.from(fileInfo, String.class);
+            byte[] part = new byte[partSizeF.from(fileInfo, Integer.class)];
             try {
-                //TODO: RandomAccessFile взять, возможно будет быстрее
-                byte[] data = Files.readAllBytes(Paths.get(sysFilePath));
+                RandomAccessFile file = new RandomAccessFile(phyPath, "rw");
                 Integer from = sentPartsF.from(fileInfo, Integer.class) * partSizeF.from(fileInfo, Integer.class);
-                Integer to = from + partSizeF.from(fileInfo, Integer.class) - 1;
-                to = to > data.length - 1 ? data.length - 1 : to;
-                part = Arrays.copyOfRange(data, from, to);
+                file.skipBytes(from - 1);
+                file.read(part, 0, partSizeF.from(fileInfo, Integer.class));
+                file.close();
             } catch (IOException e) {
                 System.out.println("An error occurred while making a part of file: " + e);
             }
