@@ -223,7 +223,7 @@
       ]
     },
     {
-      "id" : "downloadFileMm",
+      "id" : "downloadFile",
       "path" : [
         {
           "target" : "downloadActor",
@@ -260,7 +260,7 @@
       ]
     },
     {
-      "id" : "finishFileDownloadMm",
+      "id" : "finishFileDownload",
       "path" : [
         {
           "target" : "uploadActor",

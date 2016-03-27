@@ -3,7 +3,10 @@ package folder.http;
 import info.smart_tools.smartactors.core.*;
 import info.smart_tools.smartactors.core.actors.Actor;
 import info.smart_tools.smartactors.core.actors.annotations.Handler;
+import info.smart_tools.smartactors.core.addressing.AddressingFields;
+import info.smart_tools.smartactors.core.addressing.MessageMapId;
 import info.smart_tools.smartactors.core.impl.SMObject;
+import info.smart_tools.smartactors.utils.ioc.IOC;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -52,6 +55,10 @@ public class ExternalJsonRequestActor extends Actor {
                 ).append("\"")
                 .append("  },\n");
         IObject requestData = PostRequestFields.POST_REQUEST_DATA.from(msg, IObject.class);
+        IObject addrF = IOC.resolve(IObject.class);
+        AddressingFields.MESSAGE_MAP_ID_FIELD.inject(addrF, MessageMapId.fromString(PostRequestFields.REMOTE_MSG_MAP.from(msg, String.class)));
+        AddressingFields.ADDRESS_FIELD.inject(requestData, addrF);
+
         IObjectIterator it = requestData.iterator();
         while (it.next()) {
             requestBody.append("\"").append(it.getName()).append("\"").append(":");
@@ -60,7 +67,8 @@ public class ExternalJsonRequestActor extends Actor {
         requestBody.append("\"").append("status").append("\"").append(":");
         requestBody.append("\"").append("ok").append("\"");
         requestBody.append("}");
-        StringEntity input = new StringEntity(requestBody.toString().replace("\\", "\\\\"), StandardCharsets.UTF_8);
+        //StringEntity input = new StringEntity(requestBody.toString().replace("\\", "\\\\"), StandardCharsets.UTF_8);
+        StringEntity input = new StringEntity(requestData.toString(), StandardCharsets.UTF_8);
         input.setContentType("application/json");
         HttpPost post = new HttpPost(serverAddr);
         post.setHeader("Content-type", "application/json");

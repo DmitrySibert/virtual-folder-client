@@ -96,8 +96,8 @@ public class PartsMakerActor extends Actor {
             byte[] part = new byte[partSizeF.from(fileInfo, Integer.class)];
             try {
                 RandomAccessFile file = new RandomAccessFile(phyPath, "rw");
-                Integer from = sentPartsF.from(fileInfo, Integer.class) * partSizeF.from(fileInfo, Integer.class);
-                file.skipBytes(from - 1);
+                Integer sentBytes = sentPartsF.from(fileInfo, Integer.class) * partSizeF.from(fileInfo, Integer.class);
+                file.skipBytes(sentBytes);
                 file.read(part, 0, partSizeF.from(fileInfo, Integer.class));
                 file.close();
             } catch (IOException e) {

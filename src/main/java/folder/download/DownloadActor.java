@@ -9,12 +9,14 @@ import info.smart_tools.smartactors.core.actors.Actor;
 import info.smart_tools.smartactors.core.actors.annotations.Handler;
 import info.smart_tools.smartactors.core.addressing.AddressingFields;
 import info.smart_tools.smartactors.core.addressing.MessageMapId;
+import info.smart_tools.smartactors.core.addressing.maps.IMessageMapSource;
 import info.smart_tools.smartactors.core.addressing.maps.MessageMap;
 import info.smart_tools.smartactors.core.routers.MessageBus;
 import info.smart_tools.smartactors.utils.ioc.IOC;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -77,9 +79,9 @@ public class DownloadActor extends Actor {
      * @throws ChangeValueException
      */
     @Handler("handleDownloadInfoFromServer")
-    public void handleUploadInfoFromServer(IMessage msg) throws ReadValueException, ChangeValueException {
+    public void handleDownloadInfoFromServer(IMessage msg) throws ReadValueException, ChangeValueException {
 
-        IObject data = PostRequestFields.POST_REQUEST_DATA.from(msg, IObject.class);
+        IObject data = PostRequestFields.POST_RESPONSE_DATA.from(msg, IObject.class);
         for (IObject file : filesF.from(data, IObject.class)) {
             IMessage dwnldMsg = new Message(IOC.resolve(IObject.class));
             IObject addrF = IOC.resolve(IObject.class);
@@ -109,19 +111,24 @@ public class DownloadActor extends Actor {
         FileInfoFields.PARTS_QUANTITY.inject(fileInfo, FileInfoFields.PARTS_QUANTITY.from(msg, Integer.class));
         FileInfoFields.FILE_SIZE.inject(fileInfo, FileInfoFields.FILE_SIZE.from(msg, Integer.class));
         FileInfoFields.SERVER_GUID.inject(fileInfo, FileInfoFields.SERVER_GUID.from(msg, String.class));
-        FileInfoFields.PHYSIC_PATH.inject(msg, storageFolderF.from(msg, String.class) + "\\" + UUID.randomUUID().toString());
+        String filePhysicPath = storageFolderF.from(msg, String.class) + "\\" + UUID.randomUUID().toString();
+        FileInfoFields.PHYSIC_PATH.inject(fileInfo, filePhysicPath);
+        FileInfoFields.PHYSIC_PATH.inject(msg, filePhysicPath);
         fileInfoFN.setName(FileInfoFields.LOGIC_PATH.from(msg, String.class).replace('\\', '_'));
         fileInfoF.inject(msg, fileInfo);
     }
 
     @Handler("initFileDownload")
-    public void initFileDownload(IMessage msg) throws ChangeValueException, DeleteValueException {
+    public void initFileDownload(IMessage msg) throws ChangeValueException, DeleteValueException, ReadValueException {
 
-        AddressingFields.MESSAGE_MAP_FIELD.delete(msg);
+        IMessage dwnldFileMsg = new Message(IOC.resolve(IObject.class));
         IObject addrF = IOC.resolve(IObject.class);
         AddressingFields.MESSAGE_MAP_ID_FIELD.inject(addrF, MessageMapId.fromString(downloadFileMm));
-        AddressingFields.ADDRESS_FIELD.inject(msg, addrF);
-        MessageBus.send(msg);
+        AddressingFields.ADDRESS_FIELD.inject(dwnldFileMsg, addrF);
+        fileInfoFN.setName(FileInfoFields.LOGIC_PATH.from(msg, String.class).replace('\\', '_'));
+        FileInfoFields.LOGIC_PATH.inject(dwnldFileMsg, FileInfoFields.LOGIC_PATH.from(msg, String.class));
+        fileInfoF.inject(dwnldFileMsg, fileInfoF.from(msg, IObject.class));
+        MessageBus.send(dwnldFileMsg);
     }
 
     @Handler("formFilePartRequest")
@@ -132,7 +139,7 @@ public class DownloadActor extends Actor {
         IObject post = IOC.resolve(IObject.class);
         FileInfoFields.SERVER_GUID.inject(post, FileInfoFields.SERVER_GUID.from(fileInfo, String.class));
         partNumberF.inject(post, FileInfoFields.DOWNLOAD_PARTS.from(fileInfo, Integer.class) + 1);
-        PostRequestFields.REMOTE_MSG_MAP.inject(post, getFilePartMm);
+        PostRequestFields.REMOTE_MSG_MAP.inject(msg, getFilePartMm);
         PostRequestFields.POST_REQUEST_DATA.inject(msg, post);
     }
 
@@ -146,18 +153,18 @@ public class DownloadActor extends Actor {
     @Handler("saveFilePart")
     public void saveFilePart(IMessage msg) throws ReadValueException, ChangeValueException, IOException {
 
-        try {
-            RandomAccessFile f = new RandomAccessFile(FileInfoFields.PHYSIC_PATH.from(msg, String.class), "rw");
-            f.write(
-                    Bytes.toArray(EncodeFields.DECODE_RESULT.from(msg, Byte.class)),
-                    FileInfoFields.DOWNLOAD_PARTS.from(msg, Integer.class) * FileInfoFields.PART_SIZE.from(msg, Integer.class),
-                    FileInfoFields.PART_SIZE.from(msg, Integer.class)
-            );
-        } catch (IOException e) {
-            //TODO:даже и не знаю че тут можно сделать
-        }
         fileInfoFN.setName(FileInfoFields.LOGIC_PATH.from(msg, String.class).replace('\\', '_'));
         IObject fileInfo = fileInfoF.from(msg, IObject.class);
+        try {
+            RandomAccessFile f = new RandomAccessFile(FileInfoFields.PHYSIC_PATH.from(fileInfo, String.class), "rw");
+            List<Byte> part = EncodeFields.DECODE_RESULT.from(msg, Byte.class);
+            f.skipBytes(FileInfoFields.DOWNLOAD_PARTS.from(fileInfo, Integer.class) * part.size());
+            f.write(Bytes.toArray(part));
+            f.close();
+        } catch (IOException e) {
+            int k = 10;
+            //TODO:даже и не знаю че тут можно сделать
+        }
         FileInfoFields.DOWNLOAD_PARTS.inject(fileInfo, FileInfoFields.DOWNLOAD_PARTS.from(fileInfo, Integer.class) + 1);
     }
 
@@ -172,11 +179,7 @@ public class DownloadActor extends Actor {
             AddressingFields.MESSAGE_MAP_FIELD.from(msg, MessageMap.class).toStart();
         } else {
             FileInfoFields.ACTIVE.inject(fileInfo, Boolean.TRUE);
-            AddressingFields.MESSAGE_MAP_FIELD.delete(msg);
-            IObject addrF = IOC.resolve(IObject.class);
-            AddressingFields.MESSAGE_MAP_ID_FIELD.inject(addrF, MessageMapId.fromString(finishFileDownloadMm));
-            AddressingFields.ADDRESS_FIELD.inject(msg, addrF);
+            AddressingFields.MESSAGE_MAP_FIELD.from(msg, MessageMap.class).insertMessageMapId(MessageMapId.fromString(finishFileDownloadMm));
         }
-        MessageBus.send(msg);
     }
 }
