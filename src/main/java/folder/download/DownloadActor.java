@@ -109,6 +109,7 @@ public class DownloadActor extends Actor {
         IObject fileInfo = IOC.resolve(IObject.class);
         FileInfoFields.DOWNLOAD_PARTS.inject(fileInfo, 0);
         FileInfoFields.PARTS_QUANTITY.inject(fileInfo, FileInfoFields.PARTS_QUANTITY.from(msg, Integer.class));
+        FileInfoFields.PART_SIZE.inject(fileInfo, FileInfoFields.PART_SIZE.from(msg, Integer.class));
         FileInfoFields.FILE_SIZE.inject(fileInfo, FileInfoFields.FILE_SIZE.from(msg, Integer.class));
         FileInfoFields.SERVER_GUID.inject(fileInfo, FileInfoFields.SERVER_GUID.from(msg, String.class));
         String filePhysicPath = storageFolderF.from(msg, String.class) + "\\" + UUID.randomUUID().toString();
@@ -158,7 +159,7 @@ public class DownloadActor extends Actor {
         try {
             RandomAccessFile f = new RandomAccessFile(FileInfoFields.PHYSIC_PATH.from(fileInfo, String.class), "rw");
             List<Byte> part = EncodeFields.DECODE_RESULT.from(msg, Byte.class);
-            f.skipBytes(FileInfoFields.DOWNLOAD_PARTS.from(fileInfo, Integer.class) * part.size());
+            f.skipBytes(FileInfoFields.DOWNLOAD_PARTS.from(fileInfo, Integer.class) * FileInfoFields.PART_SIZE.from(fileInfo, Integer.class));
             f.write(Bytes.toArray(part));
             f.close();
         } catch (IOException e) {
