@@ -8,6 +8,26 @@
           "handler" : "getContentByPath"
         },
         {
+          "target" : "externalJsonRequestActor",
+          "handler" : "post"
+        },
+        {
+          "target" : "contentActor",
+          "handler" : "handleContentRequest"
+        },
+        {
+          "target" : "contentActor",
+          "handler" : "formFilesSrchQuery"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "get"
+        },
+        {
+          "target" : "contentActor",
+          "handler" : "handleLocalContent"
+        },
+        {
           "target" : "exchanging"
         }
       ]
@@ -22,6 +42,9 @@
         {
           "target" : "uploadActor",
           "handler" : "prepareFileMetadata"
+        },
+        {
+          "target" : "exchanging"
         },
         {
           "target" : "uploadActor",
@@ -61,7 +84,7 @@
         },
         {
           "target" : "uploadActor",
-          "handler" : "markDataForStorage"
+          "handler" : "markFileInfoForStorage"
         },
         {
           "target" : "mapDbActor",
@@ -69,7 +92,7 @@
         },
         {
           "target" : "partsMakerActor",
-          "handler" : "makePart"
+          "handler" : "initPartsUpload"
         }
       ]
     },
@@ -102,11 +125,20 @@
           "handler" : "formFilePartRequest"
         },
         {
+          "target" : "externalJsonRequestActor",
+          "handler" : "post"
+        },
+        {
           "target" : "partsMakerActor",
           "handler" : "handleFilePartSend"
         },
         {
-          "messageMapId" : "updateFileUploadInfo"
+          "target" : "uploadActor",
+          "handler" : "markFileInfoForStorage"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "insert"
         },
         {
           "target" : "utilityActor",
@@ -122,7 +154,12 @@
           "handler" : "finishUpload"
         },
         {
-          "messageMapId" : "updateFileUploadInfo"
+          "target" : "uploadActor",
+          "handler" : "markFileInfoForStorage"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "insert"
         }
       ]
     },
@@ -136,6 +173,102 @@
         {
           "target" : "fileSystemManagerActor",
           "handler" : "getCurrentFolder"
+        }
+      ]
+    },
+    {
+      "id" : "downloadFromServer",
+      "path" : [
+        {
+          "target" : "downloadActor",
+          "handler" : "formFilesInfoRequest"
+        },
+        {
+          "target" : "externalJsonRequestActor",
+          "handler" : "post"
+        },
+        {
+          "target" : "downloadActor",
+          "handler" : "handleDownloadInfoFromServer"
+        }
+      ]
+    },
+    {
+      "id" : "initDownloadFile",
+      "path" : [
+        {
+          "target" : "fileSystemManagerActor",
+          "handler" : "getCurrentFolder"
+        },
+        {
+          "target" : "downloadActor",
+          "handler" : "prepareFileInfo"
+        },
+        {
+          "target" : "uploadActor",
+          "handler" : "markFileInfoForStorage"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "insert"
+        },
+        {
+          "target" : "fileManagerActor",
+          "handler" : "createFileWithSize"
+        },
+        {
+          "target" : "downloadActor",
+          "handler" : "initFileDownload"
+        }
+      ]
+    },
+    {
+      "id" : "downloadFile",
+      "path" : [
+        {
+          "target" : "downloadActor",
+          "handler" : "formFilePartRequest"
+        },
+        {
+          "target" : "externalJsonRequestActor",
+          "handler" : "post"
+        },
+        {
+          "target" : "downloadActor",
+          "handler" : "handleFilePartReceiving"
+        },
+        {
+          "target" : "base64Actor",
+          "handler" : "decode"
+        },
+        {
+          "target" : "downloadActor",
+          "handler" : "saveFilePart"
+        },
+        {
+          "target" : "uploadActor",
+          "handler" : "markFileInfoForStorage"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "insert"
+        },
+        {
+          "target" : "downloadActor",
+          "handler" : "checkEnding"
+        }
+      ]
+    },
+    {
+      "id" : "finishFileDownload",
+      "path" : [
+        {
+          "target" : "uploadActor",
+          "handler" : "markFileInfoForStorage"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "insert"
         }
       ]
     },
@@ -154,15 +287,9 @@
       "id": "folder.content.ContentActor",
       "name": "contentActor",
       "parameters": {
-      }
-    },
-    {
-      "id": "folder.file.system.FileSystemManagerActor",
-      "name": "fileSystemManagerActor",
-      "parameters": {
-        "sysFolderPath" : "D:\\Programming\\Magistrature\\Executable\\AppSysDirectory",
-        "maxFileCounter" : "10",
-        "getFolderWithCreateMmId" : "getFolderWithCreate"
+        "contentFromSrvMm" : "folderContent",
+        "downloadFromSrvMm" : "downloadFromServer",
+        "fileInfoCollectionName" : "file_info"
       }
     },
     {
@@ -179,6 +306,27 @@
       }
     },
     {
+      "id": "folder.download.DownloadActor",
+      "name": "downloadActor",
+      "parameters": {
+        "filesInfoMm" : "filesInfo",
+        "initDownloadFileMm" : "initDownloadFile",
+        "downloadFileMm" : "downloadFile",
+        "getFilePartMm" : "getFilePart",
+        "finishFileDownloadMm" : "finishFileDownload"
+      }
+    },
+    {
+      "id": "folder.file.system.FileSystemManagerActor",
+      "name": "fileSystemManagerActor",
+      "parameters": {
+        "sysFolderPath" : "D:\\Programming\\Magistrature\\Executable\\AppSysDirectory",
+        "maxFileCounter" : "10",
+        "getFolderWithCreateMmId" : "getFolderWithCreate"
+      }
+    },
+
+    {
       "id": "folder.upload.PartsMakerActor",
       "name": "partsMakerActor",
       "parameters": {
@@ -187,7 +335,7 @@
       }
     },
     {
-      "id": "folder.console.ActionLogger",
+      "id": "folder.console.ActionLoggerActor",
       "name": "loggerActor",
       "parameters": {
       }
@@ -216,8 +364,8 @@
       "id": "folder.http.ExternalJsonRequestActor",
       "name": "externalJsonRequestActor",
       "parameters": {
-        "serverAddr" : "http://localhost:9098",
-        "clientUri" : "http://localhost:9097"
+        "serverAddr" : "http://localhost:9909",
+        "clientUri" : "http://localhost:9907"
       }
     }
   ],

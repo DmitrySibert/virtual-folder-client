@@ -1,6 +1,7 @@
 package folder.file.system;
 
 import info.smart_tools.smartactors.core.*;
+import info.smart_tools.smartactors.core.actors.Actor;
 import info.smart_tools.smartactors.core.actors.annotations.Handler;
 import info.smart_tools.smartactors.core.addressing.MessageMapId;
 import info.smart_tools.smartactors.core.addressing.maps.MessageMap;
@@ -12,7 +13,7 @@ import java.util.UUID;
  * Actor controls application system folder
  */
 //TODO: Probably need to subfolders name according particular strategy which resolves by IOC
-public class FileSystemManagerActor {
+public class FileSystemManagerActor extends Actor {
 
     private String sysFolderPath;
     private Integer curFolderOrder;
@@ -21,6 +22,7 @@ public class FileSystemManagerActor {
     private Integer fileCounter;
     private String getFolderWithCreateMmId;
     private Field<String> storageFolderF;
+
 
 
     public FileSystemManagerActor(IObject params) {
@@ -34,46 +36,51 @@ public class FileSystemManagerActor {
             System.out.println("An error occurred while constructing FileSystemManagerActor: " + e);
         }
 
-        File file = new File(sysFolderPath);
-        if(!file.exists()) {
-            if(!file.mkdir()) {
-                String errStr = "Cannot open\\create application's system folder.";
-                System.out.println(errStr);
-                throw new RuntimeException(errStr);
-            }
-        }
-
-        File[] subFolders = file.listFiles(File::isDirectory);
-        File curFolder;
-        if (subFolders.length > 0) {
-            curFolder = subFolders[0];
-            curFolderName = subFolders[0].getName();
-            Integer maxOrderNum = getFolderOrderNum(curFolderName);
-            for (File folder : subFolders) {
-                Integer curFolderOrder = getFolderOrderNum(folder.getName());
-                if(curFolderOrder > maxOrderNum) {
-                    curFolder = folder;
-                    curFolderName = subFolders[0].getName();
-                    maxOrderNum = curFolderOrder;
+        try {
+            File file = new File(sysFolderPath);
+            if (!file.exists()) {
+                if (!file.mkdir()) {
+                    String errStr = "Cannot open\\create application's system folder.";
+                    System.out.println(errStr);
+                    throw new RuntimeException(errStr);
                 }
             }
-        } else {
-            curFolderName = "1_" + UUID.randomUUID();
-            curFolder = new File(sysFolderPath + "\\" + curFolderName);
-            if(!curFolder.mkdir()) {
-                String errStr = "Cannot create application's system folder's subfolder.";
-                System.out.println(errStr);
-                throw new RuntimeException(errStr);
+
+            File[] subFolders = file.listFiles(File::isDirectory);
+            File curFolder;
+            if (subFolders.length > 0) {
+                curFolder = subFolders[0];
+                curFolderName = subFolders[0].getName();
+                Integer maxOrderNum = getFolderOrderNum(curFolderName);
+                for (File folder : subFolders) {
+                    Integer curFolderOrder = getFolderOrderNum(folder.getName());
+                    if (curFolderOrder > maxOrderNum) {
+                        curFolder = folder;
+                        curFolderName = subFolders[0].getName();
+                        maxOrderNum = curFolderOrder;
+                    }
+                }
+            } else {
+                curFolderName = "1_" + UUID.randomUUID();
+                curFolder = new File(sysFolderPath + "\\" + curFolderName);
+                if (!curFolder.mkdir()) {
+                    String errStr = "Cannot create application's system folder's subfolder.";
+                    System.out.println(errStr);
+                    throw new RuntimeException(errStr);
+                }
             }
+            curFolderOrder = getFolderOrderNum(curFolder.getName());
+            fileCounter = curFolder.listFiles().length;
+        } catch (Exception e) {
+            System.out.println(e.toString());
+            throw new RuntimeException(e);
         }
-        curFolderOrder = getFolderOrderNum(curFolder.getName());
-        fileCounter = curFolder.listFiles().length;
     }
 
     private Integer getFolderOrderNum(String folderName) {
 
         String[] nameToken = folderName.split("_");
-        return Integer.getInteger(nameToken[0]);
+        return Integer.parseInt(nameToken[0]);
     }
 
     @Handler("createSubfolder")
@@ -95,7 +102,7 @@ public class FileSystemManagerActor {
             mmF.from(msg, MessageMap.class).insertMessageMapId(MessageMapId.fromString(getFolderWithCreateMmId));
         } else {
             fileCounter++;
-            storageFolderF.inject(msg, sysFolderPath + "\\" +curFolderName);
+            storageFolderF.inject(msg, sysFolderPath + "\\" + curFolderName);
         }
     }
 }

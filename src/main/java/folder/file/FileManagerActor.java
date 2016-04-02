@@ -1,13 +1,11 @@
 package folder.file;
 
+import folder.util.FileInfoFields;
 import info.smart_tools.smartactors.core.*;
 import info.smart_tools.smartactors.core.actors.Actor;
 import info.smart_tools.smartactors.core.actors.annotations.Handler;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.channels.FileChannel;
 
 /**
@@ -40,6 +38,17 @@ public class FileManagerActor extends Actor {
             }
         } catch (IOException e) {
             String errStr = "An error occurred while copying file: " + e;
+            System.out.println(errStr);
+        }
+    }
+
+    @Handler("createFileWithSize")
+    public void createFileWithSize(IMessage msg) throws ReadValueException, ChangeValueException {
+        try {
+            RandomAccessFile f = new RandomAccessFile(FileInfoFields.PHYSIC_PATH.from(msg, String.class), "rw");
+            f.setLength(FileInfoFields.FILE_SIZE.from(msg, Integer.class));
+        } catch (Exception e) {
+            String errStr = "An error occurred while creating file: " + e;
             System.out.println(errStr);
         }
     }

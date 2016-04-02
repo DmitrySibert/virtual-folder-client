@@ -1,19 +1,21 @@
 package folder.http;
 
-import com.google.common.base.Charsets;
 import info.smart_tools.smartactors.core.*;
 import info.smart_tools.smartactors.core.actors.Actor;
 import info.smart_tools.smartactors.core.actors.annotations.Handler;
+import info.smart_tools.smartactors.core.addressing.AddressingFields;
+import info.smart_tools.smartactors.core.addressing.MessageMapId;
 import info.smart_tools.smartactors.core.impl.SMObject;
-import info.smart_tools.smartactors.core.services.endpoints.netty.http.HttpClient;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandler;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.*;
+import info.smart_tools.smartactors.utils.ioc.IOC;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 
-import java.net.URI;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 
@@ -22,55 +24,41 @@ import java.util.concurrent.ExecutionException;
  */
 public class ExternalJsonRequestActor extends Actor {
 
-    private Field<String> remoteMsgMapF;
-    private Field<IObject> postRequestDataF;
-    private Field<IObject> postResponseDataF;
-
     private String serverAddr;
     private String clientUri;
 
-    private HttpClient client;
-    private IObject responseBodyBuf;
+    private CloseableHttpClient client;
 
     public ExternalJsonRequestActor(IObject params) {
 
         try {
             serverAddr = new Field<String>(new FieldName("serverAddr")).from(params, String.class);
             clientUri = new Field<String>(new FieldName("clientUri")).from(params, String.class);
-            remoteMsgMapF = new Field<>(new FieldName("remoteMsgMap"));
-            postRequestDataF = new Field<>(new FieldName("postRequestData"));
-            postResponseDataF = new Field<>(new FieldName("postResponseData"));
-            ChannelInboundHandler handler = new SimpleChannelInboundHandler<FullHttpResponse>(FullHttpResponse.class) {
-                @Override
-                protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse msg) throws Exception {
-                    //TODO: IOC.resolve(IObject.class);
-                    responseBodyBuf = new SMObject(msg.content().toString(Charsets.UTF_8));
-                }
-            };
-            client = new HttpClient(new URI(serverAddr), handler);
-            client.start().get();
+            client = HttpClients.createDefault();
         } catch (Exception e) {
 
-            String errMsg = "An error occurred while creating ExternalJsonRequestActor: ";
+            String errMsg = "An error occurred while creating ExternalJsonRequestActor: " + e;
             System.out.println(errMsg);
             throw new RuntimeException(errMsg, e);
         }
     }
 
     @Handler("post")
-    public void post(IMessage msg) throws ChangeValueException, ReadValueException, ExecutionException, InterruptedException {
-
-        FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, serverAddr);
-        request.headers().set(HttpHeaders.Names.HOST, "localhost");
-        request.headers().set(HttpHeaders.Names.CONTENT_TYPE, "application/json");
+    public void post(IMessage msg) throws ChangeValueException, ReadValueException, ExecutionException, InterruptedException, IOException {
 
         StringBuilder requestBody = new StringBuilder();
         requestBody
                 .append("{")
                 .append("  \"address\": {")
-                .append("       \"messageMapId\":").append("\"").append(remoteMsgMapF.from(msg, String.class)).append("\"")
+                .append("       \"messageMapId\":").append("\"").append(
+                    PostRequestFields.REMOTE_MSG_MAP.from(msg, String.class)
+                ).append("\"")
                 .append("  },\n");
-        IObject requestData = postRequestDataF.from(msg, IObject.class);
+        IObject requestData = PostRequestFields.POST_REQUEST_DATA.from(msg, IObject.class);
+        IObject addrF = IOC.resolve(IObject.class);
+        AddressingFields.MESSAGE_MAP_ID_FIELD.inject(addrF, MessageMapId.fromString(PostRequestFields.REMOTE_MSG_MAP.from(msg, String.class)));
+        AddressingFields.ADDRESS_FIELD.inject(requestData, addrF);
+
         IObjectIterator it = requestData.iterator();
         while (it.next()) {
             requestBody.append("\"").append(it.getName()).append("\"").append(":");
@@ -79,13 +67,17 @@ public class ExternalJsonRequestActor extends Actor {
         requestBody.append("\"").append("status").append("\"").append(":");
         requestBody.append("\"").append("ok").append("\"");
         requestBody.append("}");
+        //StringEntity input = new StringEntity(requestBody.toString().replace("\\", "\\\\"), StandardCharsets.UTF_8);
+        StringEntity input = new StringEntity(requestData.toString(), StandardCharsets.UTF_8);
+        input.setContentType("application/json");
+        HttpPost post = new HttpPost(serverAddr);
+        post.setHeader("Content-type", "application/json");
+        post.setEntity(input);
 
-        ByteBuf bbuf = Unpooled.copiedBuffer(requestBody.toString(), StandardCharsets.UTF_8);
-        request.headers().set(HttpHeaders.Names.CONTENT_LENGTH, bbuf.readableBytes());
-        request.content().clear().writeBytes(bbuf);
-        request.headers().set(HttpHeaders.Names.ACCEPT_ENCODING, HttpHeaders.Values.GZIP);
-        client.send(request);
+        HttpResponse response = client.execute(post);
+        BufferedReader br = new BufferedReader(
+                new InputStreamReader((response.getEntity().getContent())));
 
-        postResponseDataF.inject(msg, responseBodyBuf);
+        PostRequestFields.POST_RESPONSE_DATA.inject(msg, new SMObject(br.readLine()));
     }
 }
