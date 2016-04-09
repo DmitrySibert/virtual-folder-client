@@ -108,8 +108,7 @@ public class PartsMakerActor extends Actor {
             encodeTargetF.inject(msg, Bytes.asList(part));
         } else {
             AddressingFields.MESSAGE_MAP_FIELD.delete(msg);
-            //TODO: resolve with IOC??
-            IObject addrF = new SMObject();
+            IObject addrF = IOC.resolve(IObject.class);
             AddressingFields.MESSAGE_MAP_ID_FIELD.inject(addrF, finishUploadMmId);
             AddressingFields.ADDRESS_FIELD.inject(msg, addrF);
         }

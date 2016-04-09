@@ -33,6 +33,15 @@
       ]
     },
     {
+      "id": "filesUpload",
+      "path": [
+        {
+          "target" : "fileUploadActor",
+          "handler" : "handleFilesUpload"
+        }
+      ]
+    },
+    {
       "id" : "fileUpload",
       "path" : [
         {
@@ -40,26 +49,26 @@
           "handler" : "getCurrentFolder"
         },
         {
-          "target" : "uploadActor",
+          "target" : "fileUploadActor",
           "handler" : "prepareFileMetadata"
         },
         {
           "target" : "exchanging"
         },
         {
-          "target" : "uploadActor",
+          "target" : "fileUploadActor",
           "handler" : "prepareInfoForCopy"
         },
         {
-          "target" : "uploadActor",
+          "target" : "fileUploadActor",
           "handler" : "prepareFileInfo"
         },
         {
-          "target" : "uploadActor",
+          "target" : "fileUploadActor",
           "handler" : "markFileInfoForStorage"
         },
         {
-          "target" : "uploadActor",
+          "target" : "fileUploadActor",
           "handler" : "formInfoForServer"
         },
         {
@@ -75,15 +84,15 @@
           "handler" : "post"
         },
         {
-          "target" : "uploadActor",
+          "target" : "fileUploadActor",
           "handler" : "handleUploadInfoFromServer"
         },
         {
-          "target" : "uploadActor",
+          "target" : "fileUploadActor",
           "handler" : "prepareUploadInfoForStorage"
         },
         {
-          "target" : "uploadActor",
+          "target" : "fileUploadActor",
           "handler" : "markFileInfoForStorage"
         },
         {
@@ -95,12 +104,45 @@
           "handler" : "initPartsUpload"
         }
       ]
+    },{
+
+      "id" : "folderUpload",
+      "path" : [
+        {
+          "target" : "folderUploadActor",
+          "handler" : "prepareFileMetadata"
+        },
+        {
+          "target" : "folderUploadActor",
+          "handler" : "formInfoForServer"
+        },
+        {
+          "target" : "externalJsonRequestActor",
+          "handler" : "post"
+        },
+        {
+          "target" : "folderUploadActor",
+          "handler" : "handleUploadInfoFromServer"
+        },
+        {
+          "target" : "folderUploadActor",
+          "handler" : "prepareFileInfo"
+        },
+        {
+          "target" : "folderUploadActor",
+          "handler" : "markFileInfoForStorage"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "insert"
+        }
+      ]
     },
     {
       "id" : "updateFileUploadInfo",
       "path" : [
         {
-          "target" : "uploadActor",
+          "target" : "fileUploadActor",
           "handler" : "markFileInfoForStorage"
         },
         {
@@ -133,7 +175,7 @@
           "handler" : "handleFilePartSend"
         },
         {
-          "target" : "uploadActor",
+          "target" : "fileUploadActor",
           "handler" : "markFileInfoForStorage"
         },
         {
@@ -150,11 +192,11 @@
       "id" : "finishUpload",
       "path" : [
         {
-          "target" : "uploadActor",
+          "target" : "fileUploadActor",
           "handler" : "finishUpload"
         },
         {
-          "target" : "uploadActor",
+          "target" : "fileUploadActor",
           "handler" : "markFileInfoForStorage"
         },
         {
@@ -205,7 +247,7 @@
           "handler" : "prepareFileInfo"
         },
         {
-          "target" : "uploadActor",
+          "target" : "fileUploadActor",
           "handler" : "markFileInfoForStorage"
         },
         {
@@ -246,7 +288,7 @@
           "handler" : "saveFilePart"
         },
         {
-          "target" : "uploadActor",
+          "target" : "fileUploadActor",
           "handler" : "markFileInfoForStorage"
         },
         {
@@ -263,7 +305,7 @@
       "id" : "finishFileDownload",
       "path" : [
         {
-          "target" : "uploadActor",
+          "target" : "fileUploadActor",
           "handler" : "markFileInfoForStorage"
         },
         {
@@ -299,10 +341,18 @@
       }
     },
     {
-      "id": "folder.upload.UploadActor",
-      "name": "uploadActor",
+      "id": "folder.upload.FileUploadActor",
+      "name": "fileUploadActor",
       "parameters": {
         "fileInfoCollectionName" : "file_info"
+      }
+    },
+    {
+      "id": "folder.upload.FolderUploadActor",
+      "name": "folderUploadActor",
+      "parameters": {
+        "fileInfoCollectionName" : "file_info",
+        "createFolderServerMm" : "folderReceiving"
       }
     },
     {
