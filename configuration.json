@@ -315,6 +315,65 @@
       ]
     },
     {
+      "id" : "startFilesDeleting",
+      "path" : [
+        {
+          "target" : "deleteActor",
+          "handler" : "formFilesKeysQuery"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "get"
+        },
+        {
+          "target" : "deleteActor",
+          "handler" : "handleSrchResult"
+        },
+        {
+          "target" : "deleteActor",
+          "handler" : "formFilesGuidsList"
+        },
+        {
+          "target" : "deleteActor",
+          "handler" : "prepareInfoForServer"
+        },
+        {
+          "target" : "externalJsonRequestActor",
+          "handler" : "post"
+        },
+        {
+          "target" : "deleteActor",
+          "handler" : "handleDeleteResponse"
+        }
+      ]
+    },
+    {
+      "id" : "deleteFiles",
+      "path" : [
+        {
+          "target" : "deleteActor",
+          "handler" : "formFilesKeysQuery"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "delete"
+        },
+        {
+          "target" : "deleteActor",
+          "handler" : "successResult"
+        }
+      ]
+    },
+    {
+      "id" : "deleteFilesFailed",
+      "path" : [
+        {
+          "target" : "deleteActor",
+          "handler" : "errorResult"
+        }
+      ]
+    },
+    {
       "id" : "loggerId",
       "path" : [
         {
@@ -382,6 +441,15 @@
       "parameters": {
         "finishUploadMmId" : "finishUpload",
         "uploadFilePartMmId" : "uploadFilePart"
+      }
+    },
+    {
+      "id": "folder.service.DeleteActor",
+      "name": "deleteActor",
+      "parameters": {
+        "fileInfoCollectionName" : "file_info",
+        "deleteFileServerMm" : "deleteFiles",
+        "deleteFilesMmId" : "deleteFiles"
       }
     },
     {

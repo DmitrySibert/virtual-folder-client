@@ -25,7 +25,7 @@ public class FileUploadActor extends Actor {
     private Field<String> storageFolderF;
     /** Настоящее имя файла*/
     private Field<String> fileOriginNameF;
-    /** Имя, присвоенное файлу, для хранения в системной директории приложения */
+    /** Полный логический путь файла */
     private Field<String> fileIdF;
 
     private Field<String> srcF;
