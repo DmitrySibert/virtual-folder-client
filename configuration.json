@@ -113,6 +113,9 @@
           "handler" : "prepareFileMetadata"
         },
         {
+          "target" : "exchanging"
+        },
+        {
           "target" : "folderUploadActor",
           "handler" : "formInfoForServer"
         },
@@ -261,6 +264,23 @@
         {
           "target" : "downloadActor",
           "handler" : "initFileDownload"
+        }
+      ]
+    },
+    {
+      "id" : "downloadFolder",
+      "path" : [
+        {
+          "target" : "downloadActor",
+          "handler" : "prepareFolderInfo"
+        },
+        {
+          "target" : "fileUploadActor",
+          "handler" : "markFileInfoForStorage"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "insert"
         }
       ]
     },
@@ -421,6 +441,7 @@
         "filesInfoMm" : "filesInfo",
         "initDownloadFileMm" : "initDownloadFile",
         "downloadFileMm" : "downloadFile",
+        "downloadFolderMm" : "downloadFolder",
         "getFilePartMm" : "getFilePart",
         "finishFileDownloadMm" : "finishFileDownload"
       }

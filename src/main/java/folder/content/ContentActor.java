@@ -105,11 +105,13 @@ public class ContentActor extends Actor {
             if(uploadedFile != null) {
                 originalNameF.inject(folderFile, originalNameF.from(fileInfo, String.class));
                 activeF.inject(folderFile, activeF.from(uploadedFile, Boolean.class));
+                FileInfoFields.IS_FOLDER.inject(folderFile, FileInfoFields.IS_FOLDER.from(uploadedFile, Boolean.class));
             } else {
                 activeF.inject(folderFile, Boolean.FALSE);
                 IObject forDownloadFile = IOC.resolve(IObject.class);
                 logicPathF.inject(forDownloadFile, logicPath);
                 serverGuidF.inject(forDownloadFile, serverGuidF.from(fileInfo, String.class));
+                FileInfoFields.IS_FOLDER.inject(forDownloadFile, FileInfoFields.IS_FOLDER.from(fileInfo, Boolean.class));
                 forDownloadFiles.add(forDownloadFile);
             }
             folderFiles.add(folderFile);

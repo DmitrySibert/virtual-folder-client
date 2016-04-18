@@ -59,11 +59,14 @@ public class FolderUploadActor extends Actor {
     @Handler("prepareFileMetadata")
     public void prepareFileMetadata(IMessage msg) throws ReadValueException, ChangeValueException {
 
-        String originFilePath = filePathF.from(msg, String.class);
-        String[] filePathTokens = originFilePath.split("\\\\");
-        String fileOriginName = filePathTokens[filePathTokens.length - 1];
-        fileOriginNameF.inject(msg, fileOriginName);
-        FileInfoFields.LOGIC_PATH.inject(msg, FileInfoFields.LOGIC_PATH.from(msg, String.class) + "\\" + fileOriginName);
+        //TODO: необходимо подумать о том, надо ли обрабатывать все внутренности
+        //TODO: директории, если ее кинули драг.н.дропом
+        //FileInfoFields.ORIGINAL_NAME.inject(msg, FileInfoFields.ORIGINAL_NAME.from(msg, String.class));
+        //FileInfoFields.LOGIC_PATH.inject(msg, FileInfoFields.LOGIC_PATH.from(msg, String.class));
+        FileInfoFields.LOGIC_PATH.inject(
+                msg,
+                FileInfoFields.LOGIC_PATH.from(msg, String.class) + "\\\\" + FileInfoFields.ORIGINAL_NAME.from(msg, String.class)
+        );
     }
 
     /**
@@ -76,8 +79,10 @@ public class FolderUploadActor extends Actor {
     public void formInfoForServer(IMessage msg) throws ReadValueException, ChangeValueException {
 
         IObject info = IOC.resolve(IObject.class);
-        fileIdF.inject(info, FileInfoFields.LOGIC_PATH.from(msg, String.class));
+        FileInfoFields.LOGIC_PATH.inject(info, FileInfoFields.LOGIC_PATH.from(msg, String.class));
+        FileInfoFields.ORIGINAL_NAME.inject(info, FileInfoFields.ORIGINAL_NAME.from(msg, String.class));
         FileInfoFields.IS_FOLDER.inject(info, Boolean.TRUE);
+        fileIdF.inject(info, FileInfoFields.LOGIC_PATH.from(msg, String.class));
         PostRequestFields.POST_REQUEST_DATA.inject(msg, info);
         PostRequestFields.REMOTE_MSG_MAP.inject(msg, createFolderServerMm);
     }
@@ -92,7 +97,6 @@ public class FolderUploadActor extends Actor {
     public void handleUploadInfoFromServer(IMessage msg) throws ReadValueException, ChangeValueException {
 
         IObject data = PostRequestFields.POST_RESPONSE_DATA.from(msg, IObject.class);
-        fileIdF.inject(msg, fileIdF.from(data, String.class));
         FileInfoFields.SERVER_GUID.inject(msg, FileInfoFields.SERVER_GUID.from(data, String.class));
     }
 
