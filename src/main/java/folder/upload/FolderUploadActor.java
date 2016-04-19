@@ -65,7 +65,7 @@ public class FolderUploadActor extends Actor {
         //FileInfoFields.LOGIC_PATH.inject(msg, FileInfoFields.LOGIC_PATH.from(msg, String.class));
         FileInfoFields.LOGIC_PATH.inject(
                 msg,
-                FileInfoFields.LOGIC_PATH.from(msg, String.class) + "\\\\" + FileInfoFields.ORIGINAL_NAME.from(msg, String.class)
+                FileInfoFields.LOGIC_PATH.from(msg, String.class) + "\\" + FileInfoFields.ORIGINAL_NAME.from(msg, String.class)
         );
     }
 

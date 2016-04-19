@@ -469,7 +469,7 @@
       "name": "deleteActor",
       "parameters": {
         "fileInfoCollectionName" : "file_info",
-        "deleteFileServerMm" : "deleteFiles",
+        "deleteFilesServerMm" : "deleteFiles",
         "deleteFilesMmId" : "deleteFiles"
       }
     },

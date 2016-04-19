@@ -100,9 +100,10 @@ public class DeleteActor extends Actor{
     @Handler("handleDeleteResponse")
     public void handleDeleteResponse(IMessage msg) throws ReadValueException, ChangeValueException, DeleteValueException {
 
+        IObject data = PostRequestFields.POST_RESPONSE_DATA.from(msg, IObject.class);
         AddressingFields.MESSAGE_MAP_FIELD.delete(msg);
         IObject addrF = IOC.resolve(IObject.class);
-        if (statusF.from(msg, Boolean.class)) {
+        if (statusF.from(data, Boolean.class)) {
             AddressingFields.MESSAGE_MAP_ID_FIELD.inject(addrF, deleteFilesMmId);
         } else {
             AddressingFields.MESSAGE_MAP_ID_FIELD.inject(addrF, deleteFilesFailedMmId);
