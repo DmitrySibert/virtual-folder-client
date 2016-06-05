@@ -25,7 +25,6 @@ import java.util.concurrent.ExecutionException;
 public class ExternalJsonRequestActor extends Actor {
 
     private String serverAddr;
-    private String clientUri;
 
     private CloseableHttpClient client;
 
@@ -33,7 +32,6 @@ public class ExternalJsonRequestActor extends Actor {
 
         try {
             serverAddr = new Field<String>(new FieldName("serverAddr")).from(params, String.class);
-            clientUri = new Field<String>(new FieldName("clientUri")).from(params, String.class);
             client = HttpClients.createDefault();
         } catch (Exception e) {
 
@@ -46,28 +44,11 @@ public class ExternalJsonRequestActor extends Actor {
     @Handler("post")
     public void post(IMessage msg) throws ChangeValueException, ReadValueException, ExecutionException, InterruptedException, IOException {
 
-        StringBuilder requestBody = new StringBuilder();
-        requestBody
-                .append("{")
-                .append("  \"address\": {")
-                .append("       \"messageMapId\":").append("\"").append(
-                    PostRequestFields.REMOTE_MSG_MAP.from(msg, String.class)
-                ).append("\"")
-                .append("  },\n");
         IObject requestData = PostRequestFields.POST_REQUEST_DATA.from(msg, IObject.class);
         IObject addrF = IOC.resolve(IObject.class);
         AddressingFields.MESSAGE_MAP_ID_FIELD.inject(addrF, MessageMapId.fromString(PostRequestFields.REMOTE_MSG_MAP.from(msg, String.class)));
         AddressingFields.ADDRESS_FIELD.inject(requestData, addrF);
 
-        IObjectIterator it = requestData.iterator();
-        while (it.next()) {
-            requestBody.append("\"").append(it.getName()).append("\"").append(":");
-            requestBody.append("\"").append(it.getValue()).append("\"").append(",");
-        }
-        requestBody.append("\"").append("status").append("\"").append(":");
-        requestBody.append("\"").append("ok").append("\"");
-        requestBody.append("}");
-        //StringEntity input = new StringEntity(requestBody.toString().replace("\\", "\\\\"), StandardCharsets.UTF_8);
         StringEntity input = new StringEntity(requestData.toString(), StandardCharsets.UTF_8);
         input.setContentType("application/json");
         HttpPost post = new HttpPost(serverAddr);

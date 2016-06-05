@@ -36,21 +36,26 @@ public class MapDbActor extends Actor {
                 .make();
     }
 
-    @Handler("insert")
-    public void insert(IMessage msg) throws ReadValueException, ChangeValueException {
+    @Handler("forceCommit")
+    public void forceCommit(IMessage msg) throws ChangeValueException {
 
         try {
-            Map<String, String> map = db.treeMap(KeyValueDB.COLLECTION_NAME.from(msg, String.class));
-            IObject insertData = KeyValueDB.INSERT_DATA.from(msg, IObject.class);
-            IObjectIterator it = insertData.iterator();
-            while (it.next()) {
-                map.put(it.getName().toString(), it.getValue().toString());
-            }
             db.commit();
         } catch (Exception e) {
 
-            System.out.println("An error occurred while inserting data in mapdb: " + e);
+            System.out.println("An error occurred while commiting data in mapdb: " + e);
             db.rollback();
+        }
+    }
+
+    @Handler("insert")
+    public void insert(IMessage msg) throws ReadValueException, ChangeValueException {
+
+        Map<String, String> map = db.treeMap(KeyValueDB.COLLECTION_NAME.from(msg, String.class));
+        IObject insertData = KeyValueDB.INSERT_DATA.from(msg, IObject.class);
+        IObjectIterator it = insertData.iterator();
+        while (it.next()) {
+            map.put(it.getName().toString(), it.getValue().toString());
         }
     }
 

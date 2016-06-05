@@ -100,12 +100,16 @@
           "handler" : "insert"
         },
         {
+          "target" : "mapDbActor",
+          "handler" : "forceCommit"
+        },
+        {
           "target" : "partsMakerActor",
           "handler" : "initPartsUpload"
         }
       ]
-    },{
-
+    },
+    {
       "id" : "folderUpload",
       "path" : [
         {
@@ -138,6 +142,10 @@
         {
           "target" : "mapDbActor",
           "handler" : "insert"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "forceCommit"
         }
       ]
     },
@@ -205,6 +213,10 @@
         {
           "target" : "mapDbActor",
           "handler" : "insert"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "forceCommit"
         }
       ]
     },
@@ -258,6 +270,10 @@
           "handler" : "insert"
         },
         {
+          "target" : "mapDbActor",
+          "handler" : "forceCommit"
+        },
+        {
           "target" : "fileManagerActor",
           "handler" : "createFileWithSize"
         },
@@ -281,6 +297,10 @@
         {
           "target" : "mapDbActor",
           "handler" : "insert"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "forceCommit"
         }
       ]
     },
@@ -331,6 +351,10 @@
         {
           "target" : "mapDbActor",
           "handler" : "insert"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "forceCommit"
         }
       ]
     },
@@ -377,6 +401,10 @@
         {
           "target" : "mapDbActor",
           "handler" : "delete"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "forceCommit"
         },
         {
           "target" : "deleteActor",

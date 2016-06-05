@@ -119,7 +119,7 @@ public class DeleteActor extends Actor{
         });
     }
 
-    @Handler("successResult")
+    @Handler("errorResult")
     public void errorResult(IMessage msg) throws ReadValueException, ChangeValueException {
 
         respondOn(msg, response -> {

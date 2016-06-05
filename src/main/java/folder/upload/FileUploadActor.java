@@ -139,6 +139,7 @@ public class FileUploadActor extends Actor {
         IObject fileInfo = IOC.resolve(IObject.class);
         FileInfoFields.SENT_PARTS.inject(fileInfo, 0);
         FileInfoFields.IS_SENT.inject(fileInfo, Boolean.FALSE);
+        FileInfoFields.IS_FOLDER.inject(fileInfo, Boolean.FALSE);
         FileInfoFields.FILE_SIZE.inject(fileInfo, FileInfoFields.FILE_SIZE.from(msg, Integer.class));
         FileInfoFields.PHYSIC_PATH.inject(fileInfo, FileInfoFields.PHYSIC_PATH.from(msg, String.class));
         msg.setValue(new FieldName(FileInfoFields.LOGIC_PATH.from(msg, String.class).replace('\\', '_')), fileInfo);
@@ -219,5 +220,6 @@ public class FileUploadActor extends Actor {
         FieldName filePathFN = new FieldName(FileInfoFields.LOGIC_PATH.from(msg, String.class).replace('\\', '_'));
         IObject fileInfo = (IObject) msg.getValue(filePathFN);
         FileInfoFields.IS_SENT.inject(fileInfo, Boolean.TRUE);
+        FileInfoFields.ACTIVE.inject(fileInfo, Boolean.TRUE);
     }
 }

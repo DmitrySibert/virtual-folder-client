@@ -121,6 +121,7 @@ public class DownloadActor extends Actor {
         FileInfoFields.FILE_SIZE.inject(fileInfo, FileInfoFields.FILE_SIZE.from(msg, Integer.class));
         FileInfoFields.IS_FOLDER.inject(fileInfo, FileInfoFields.IS_FOLDER.from(msg, Boolean.class));
         FileInfoFields.SERVER_GUID.inject(fileInfo, FileInfoFields.SERVER_GUID.from(msg, String.class));
+        FileInfoFields.ACTIVE.inject(fileInfo, Boolean.FALSE);
         String filePhysicPath = storageFolderF.from(msg, String.class) + "\\" + UUID.randomUUID().toString();
         FileInfoFields.PHYSIC_PATH.inject(fileInfo, filePhysicPath);
         FileInfoFields.PHYSIC_PATH.inject(msg, filePhysicPath);
