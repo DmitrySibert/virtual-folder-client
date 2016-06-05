@@ -1,6 +1,7 @@
 package folder.content;
 
 import folder.http.PostRequestFields;
+import folder.util.FileInfoFields;
 import info.smart_tools.smartactors.core.*;
 import info.smart_tools.smartactors.core.actors.Actor;
 import info.smart_tools.smartactors.core.actors.annotations.Handler;
@@ -23,7 +24,7 @@ public class ContentActor extends Actor {
     private ListField<IObject> fldrContentF;
     private ListField<IObject> filesF;
     private Field<String> logicPathF;
-    private ListField<String> searchKeysF;   //ключи для запроса информации по файлам из БД
+    private ListField<String> targetKeysF;   //ключи для запроса информации по файлам из БД
     private Field<IObject> searchDataF;      //данные, извлеченные из БД
     private Field<String> collectionNameF;
     private Field<String> originalNameF;
@@ -40,7 +41,7 @@ public class ContentActor extends Actor {
         fldrContentF = new ListField<>(new FieldName("folderContent"));
         filesF = new ListField<>(new FieldName("files"));
         logicPathF = new Field<>(new FieldName("logicPath"));
-        searchKeysF = new ListField<>(new FieldName("searchKeys"));
+        targetKeysF = new ListField<>(new FieldName("targetKeys"));
         searchDataF = new Field<>(new FieldName("searchData"));
         collectionNameF = new Field<>(new FieldName("collectionName"));
         originalNameF = new Field<>(new FieldName("originalName"));
@@ -62,7 +63,7 @@ public class ContentActor extends Actor {
     public void getContentByPath(IMessage msg) throws ChangeValueException, ReadValueException {
 
         IObject post = IOC.resolve(IObject.class);
-        folderPathF.inject(post, folderPathF.from(msg, String.class));
+        FileInfoFields.LOGIC_PATH.inject(post, FileInfoFields.LOGIC_PATH.from(msg, String.class));
         PostRequestFields.POST_REQUEST_DATA.inject(msg, post);
         PostRequestFields.REMOTE_MSG_MAP.inject(msg, contentFromSrvMm);
     }
@@ -84,7 +85,7 @@ public class ContentActor extends Actor {
             searchKeys.add(fileId.replace("\\", "_"));
         }
         collectionNameF.inject(msg, fileInfoCollectionName);
-        searchKeysF.inject(msg, searchKeys);
+        targetKeysF.inject(msg, searchKeys);
     }
 
     @Handler("handleLocalContent")
@@ -104,11 +105,13 @@ public class ContentActor extends Actor {
             if(uploadedFile != null) {
                 originalNameF.inject(folderFile, originalNameF.from(fileInfo, String.class));
                 activeF.inject(folderFile, activeF.from(uploadedFile, Boolean.class));
+                FileInfoFields.IS_FOLDER.inject(folderFile, FileInfoFields.IS_FOLDER.from(uploadedFile, Boolean.class));
             } else {
                 activeF.inject(folderFile, Boolean.FALSE);
                 IObject forDownloadFile = IOC.resolve(IObject.class);
                 logicPathF.inject(forDownloadFile, logicPath);
                 serverGuidF.inject(forDownloadFile, serverGuidF.from(fileInfo, String.class));
+                FileInfoFields.IS_FOLDER.inject(forDownloadFile, FileInfoFields.IS_FOLDER.from(fileInfo, Boolean.class));
                 forDownloadFiles.add(forDownloadFile);
             }
             folderFiles.add(folderFile);

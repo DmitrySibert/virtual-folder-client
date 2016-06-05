@@ -100,17 +100,24 @@
           "handler" : "insert"
         },
         {
+          "target" : "mapDbActor",
+          "handler" : "forceCommit"
+        },
+        {
           "target" : "partsMakerActor",
           "handler" : "initPartsUpload"
         }
       ]
-    },{
-
+    },
+    {
       "id" : "folderUpload",
       "path" : [
         {
           "target" : "folderUploadActor",
           "handler" : "prepareFileMetadata"
+        },
+        {
+          "target" : "exchanging"
         },
         {
           "target" : "folderUploadActor",
@@ -135,6 +142,10 @@
         {
           "target" : "mapDbActor",
           "handler" : "insert"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "forceCommit"
         }
       ]
     },
@@ -202,6 +213,10 @@
         {
           "target" : "mapDbActor",
           "handler" : "insert"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "forceCommit"
         }
       ]
     },
@@ -255,12 +270,37 @@
           "handler" : "insert"
         },
         {
+          "target" : "mapDbActor",
+          "handler" : "forceCommit"
+        },
+        {
           "target" : "fileManagerActor",
           "handler" : "createFileWithSize"
         },
         {
           "target" : "downloadActor",
           "handler" : "initFileDownload"
+        }
+      ]
+    },
+    {
+      "id" : "downloadFolder",
+      "path" : [
+        {
+          "target" : "downloadActor",
+          "handler" : "prepareFolderInfo"
+        },
+        {
+          "target" : "fileUploadActor",
+          "handler" : "markFileInfoForStorage"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "insert"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "forceCommit"
         }
       ]
     },
@@ -311,6 +351,73 @@
         {
           "target" : "mapDbActor",
           "handler" : "insert"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "forceCommit"
+        }
+      ]
+    },
+    {
+      "id" : "startFilesDeleting",
+      "path" : [
+        {
+          "target" : "deleteActor",
+          "handler" : "formFilesKeysQuery"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "get"
+        },
+        {
+          "target" : "deleteActor",
+          "handler" : "handleSrchResult"
+        },
+        {
+          "target" : "deleteActor",
+          "handler" : "formFilesGuidsList"
+        },
+        {
+          "target" : "deleteActor",
+          "handler" : "prepareInfoForServer"
+        },
+        {
+          "target" : "externalJsonRequestActor",
+          "handler" : "post"
+        },
+        {
+          "target" : "deleteActor",
+          "handler" : "handleDeleteResponse"
+        }
+      ]
+    },
+    {
+      "id" : "deleteFiles",
+      "path" : [
+        {
+          "target" : "deleteActor",
+          "handler" : "formFilesKeysQuery"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "delete"
+        },
+        {
+          "target" : "mapDbActor",
+          "handler" : "forceCommit"
+        },
+        {
+          "target" : "deleteActor",
+          "handler" : "successResult"
+        }
+      ]
+    },
+    {
+      "id" : "deleteFilesFailed",
+      "path" : [
+        {
+          "target" : "deleteActor",
+          "handler" : "errorResult"
         }
       ]
     },
@@ -362,6 +469,7 @@
         "filesInfoMm" : "filesInfo",
         "initDownloadFileMm" : "initDownloadFile",
         "downloadFileMm" : "downloadFile",
+        "downloadFolderMm" : "downloadFolder",
         "getFilePartMm" : "getFilePart",
         "finishFileDownloadMm" : "finishFileDownload"
       }
@@ -382,6 +490,15 @@
       "parameters": {
         "finishUploadMmId" : "finishUpload",
         "uploadFilePartMmId" : "uploadFilePart"
+      }
+    },
+    {
+      "id": "folder.service.DeleteActor",
+      "name": "deleteActor",
+      "parameters": {
+        "fileInfoCollectionName" : "file_info",
+        "deleteFilesServerMm" : "deleteFiles",
+        "deleteFilesMmId" : "deleteFiles"
       }
     },
     {

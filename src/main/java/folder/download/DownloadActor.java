@@ -35,6 +35,7 @@ public class DownloadActor extends Actor {
     private String filesInfoMm;
     private String initDownloadFileMm;
     private String downloadFileMm;
+    private String downloadFolderMm;
     private String getFilePartMm;
     private String finishFileDownloadMm;
 
@@ -50,6 +51,7 @@ public class DownloadActor extends Actor {
             filesInfoMm = new Field<String>(new FieldName("filesInfoMm")).from(params, String.class);
             initDownloadFileMm = new Field<String>(new FieldName("initDownloadFileMm")).from(params, String.class);
             downloadFileMm = new Field<String>(new FieldName("downloadFileMm")).from(params, String.class);
+            downloadFolderMm = new Field<String>(new FieldName("downloadFolderMm")).from(params, String.class);
             getFilePartMm = new Field<String>(new FieldName("getFilePartMm")).from(params, String.class);
             finishFileDownloadMm = new Field<String>(new FieldName("finishFileDownloadMm")).from(params, String.class);
         } catch (ReadValueException | ChangeValueException e) {
@@ -85,16 +87,22 @@ public class DownloadActor extends Actor {
         for (IObject file : filesF.from(data, IObject.class)) {
             IMessage dwnldMsg = new Message(IOC.resolve(IObject.class));
             IObject addrF = IOC.resolve(IObject.class);
-            AddressingFields.MESSAGE_MAP_ID_FIELD.inject(addrF, MessageMapId.fromString(initDownloadFileMm));
-            AddressingFields.ADDRESS_FIELD.inject(dwnldMsg, addrF);
+            if (FileInfoFields.IS_FOLDER.from(file, Boolean.class)) {
+                AddressingFields.MESSAGE_MAP_ID_FIELD.inject(addrF, MessageMapId.fromString(downloadFolderMm));
+                AddressingFields.ADDRESS_FIELD.inject(dwnldMsg, addrF);
+            } else {
+                AddressingFields.MESSAGE_MAP_ID_FIELD.inject(addrF, MessageMapId.fromString(initDownloadFileMm));
+                AddressingFields.ADDRESS_FIELD.inject(dwnldMsg, addrF);
+            }
             FileInfoFields.LOGIC_PATH.inject(
-                    dwnldMsg, FileInfoFields.LOGIC_PATH.from(file, String.class) + "\\" +
+                    dwnldMsg, FileInfoFields.LOGIC_PATH.from(file, String.class) +
                     FileInfoFields.ORIGINAL_NAME.from(file, String.class)
             );
             FileInfoFields.SERVER_GUID.inject(dwnldMsg, FileInfoFields.SERVER_GUID.from(file, String.class));
             FileInfoFields.PARTS_QUANTITY.inject(dwnldMsg, FileInfoFields.PARTS_QUANTITY.from(file, Integer.class));
             FileInfoFields.PART_SIZE.inject(dwnldMsg, FileInfoFields.PART_SIZE.from(file, Integer.class));
             FileInfoFields.FILE_SIZE.inject(dwnldMsg, FileInfoFields.FILE_SIZE.from(file, Integer.class));
+            FileInfoFields.IS_FOLDER.inject(dwnldMsg, FileInfoFields.IS_FOLDER.from(file, Boolean.class));
             MessageBus.send(dwnldMsg);
         }
     }
@@ -111,11 +119,28 @@ public class DownloadActor extends Actor {
         FileInfoFields.PARTS_QUANTITY.inject(fileInfo, FileInfoFields.PARTS_QUANTITY.from(msg, Integer.class));
         FileInfoFields.PART_SIZE.inject(fileInfo, FileInfoFields.PART_SIZE.from(msg, Integer.class));
         FileInfoFields.FILE_SIZE.inject(fileInfo, FileInfoFields.FILE_SIZE.from(msg, Integer.class));
+        FileInfoFields.IS_FOLDER.inject(fileInfo, FileInfoFields.IS_FOLDER.from(msg, Boolean.class));
         FileInfoFields.SERVER_GUID.inject(fileInfo, FileInfoFields.SERVER_GUID.from(msg, String.class));
+        FileInfoFields.ACTIVE.inject(fileInfo, Boolean.FALSE);
         String filePhysicPath = storageFolderF.from(msg, String.class) + "\\" + UUID.randomUUID().toString();
         FileInfoFields.PHYSIC_PATH.inject(fileInfo, filePhysicPath);
         FileInfoFields.PHYSIC_PATH.inject(msg, filePhysicPath);
         fileInfoFN.setName(FileInfoFields.LOGIC_PATH.from(msg, String.class).replace('\\', '_'));
+        fileInfoF.inject(msg, fileInfo);
+    }
+
+    /**
+     * Формируем данные для директории
+     * @param msg
+     */
+    @Handler("prepareFolderInfo")
+    public void prepareFolderInfo(IMessage msg) throws ChangeValueException, ReadValueException {
+
+        IObject fileInfo = IOC.resolve(IObject.class);
+        FileInfoFields.SERVER_GUID.inject(fileInfo, FileInfoFields.SERVER_GUID.from(msg, String.class));
+        FileInfoFields.IS_FOLDER.inject(fileInfo, FileInfoFields.IS_FOLDER.from(msg, Boolean.class));
+        FileInfoFields.ACTIVE.inject(fileInfo, Boolean.TRUE);
+        fileInfoFN.setName(FileInfoFields.LOGIC_PATH.from(msg, String.class).replace("\\", "_"));
         fileInfoF.inject(msg, fileInfo);
     }
 
